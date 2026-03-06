@@ -120,11 +120,17 @@ if(navigator.geolocation){
 
 /* Route */
 const routeControl = L.Routing.control({
-  waypoints:[start,destination],
-  lineOptions:{styles:[{color:'#42e695',weight:5}]},
-  createMarker:i=>i===0 ? L.marker(start,{icon:L.icon({iconUrl:'https://maps.gstatic.com/mapfiles/ms2/micons/green.png',iconSize:[32,32]})}) :
-             i===1 ? L.marker(destination,{icon:L.icon({iconUrl:'https://maps.gstatic.com/mapfiles/ms2/micons/red.png',iconSize:[32,32]})}) : null,
-  routeWhileDragging:false, addWaypoints:false
+    waypoints: waypoints,
+    router: L.Routing.osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1' }),
+    lineOptions: { styles: [{ color: '#42e695', weight: 5 }] },
+    createMarker: function(i, wp) {
+        if (i === 0) return L.marker(wp.latLng, { icon: L.icon({ iconUrl:'https://maps.gstatic.com/mapfiles/ms2/micons/green.png', iconSize:[32,32] }) });
+        if (i === waypoints.length-1) return L.marker(wp.latLng, { icon: L.icon({ iconUrl:'https://maps.gstatic.com/mapfiles/ms2/micons/red.png', iconSize:[32,32] }) });
+        return null;
+    },
+    routeWhileDragging: false,
+    addWaypoints: false,
+    show: false // <-- THIS removes the default instructions panel
 }).addTo(map);
 
 routeControl.on('routesfound',e=>{

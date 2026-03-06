@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>COMMUTEIQ Map - Fullscreen Mobile</title>
+<title>COMMUTEIQ Map - Transport Stations</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
 <style>
@@ -21,40 +21,40 @@ html, body { height:100%; margin:0; font-family:sans-serif; }
 button.toggle-btn { background:#1e3c72;color:white;padding:0 5px;border-radius:3px; font-size:14px; cursor:pointer; }
 
 /* Panel positions on desktop */
-#info{top:10px;}
-#transport{top:110px;}
-#alerts{top:250px;}
+#stations{top:10px;}
+#transport{top:170px;}
+#alerts{top:310px;}
 
-/* Fullscreen button */
-#fullscreen-btn {
-  position:absolute; top:10px; right:10px; z-index:1100;
-  background:#1e3c72; color:white; border:none; padding:8px 12px; border-radius:6px;
-  font-size:14px; cursor:pointer;
+/* QR code floating button */
+#qr-btn {
+  position:absolute; bottom:20px; right:20px; z-index:1100;
+  background:#ff3b30; color:white; border:none; padding:12px 16px;
+  border-radius:50%; font-size:16px; cursor:pointer; box-shadow:0 3px 6px rgba(0,0,0,0.3);
 }
 
 /* Mobile responsiveness */
 @media screen and (max-width: 600px){
   .panel { width:90%; left:50%; transform:translateX(-50%); }
-  #info{top:auto; bottom:210px;}
+  #stations{top:auto; bottom:210px;}
   #transport{top:auto; bottom:140px;}
   #alerts{top:auto; bottom:70px;}
   .panel h3 { font-size:18px;}
   .panel-content { font-size:16px;}
-  #fullscreen-btn { padding:10px 14px; font-size:16px;}
+  #qr-btn { padding:16px 18px; font-size:18px; bottom:30px; right:20px;}
 }
 </style>
 </head>
 <body>
 <div id="map"></div>
 
-<button id="fullscreen-btn" onclick="toggleFullscreen()">Full Screen</button>
+<!-- QR Button -->
+<button id="qr-btn" onclick="openQR()">QR</button>
 
-<!-- Distance & Duration -->
-<div id="info" class="panel">
-  <h3>Distance & Duration <button class="toggle-btn" onclick="togglePanel('info')">–</button></h3>
-  <div class="panel-content" id="info-content">
-    <p id="distance">Distance: calculating...</p>
-    <p id="duration">Duration: calculating...</p>
+<!-- Transport Stations -->
+<div id="stations" class="panel">
+  <h3>Transport Stations <button class="toggle-btn" onclick="togglePanel('stations')">–</button></h3>
+  <div class="panel-content" id="stations-content">
+    <ul id="stations-list"></ul>
   </div>
 </div>
 
@@ -125,12 +125,8 @@ const routingControl = L.Routing.control({
 routingControl.on('routesfound', function(e){
   const route = e.routes[0];
   const coords = route.coordinates;
-  const distanceKm = (route.summary.totalDistance/1000).toFixed(2);
-  const durationMin = Math.round(route.summary.totalTime/60);
-  document.getElementById('distance').innerText = 'Distance: '+distanceKm+' km';
-  document.getElementById('duration').innerText = 'Duration: '+durationMin+' mins';
 
-  // Transportation suggestions
+  // Transport suggestions
   const transports = [
     {type:"Jeep/Bus", rate:10},
     {type:"MRT/LRT", rate:12},
@@ -138,7 +134,9 @@ routingControl.on('routesfound', function(e){
   ];
   const tlist = document.getElementById('transport-list'); tlist.innerHTML="";
   transports.forEach(t=>{
-    const li=document.createElement('li'); li.textContent=`${t.type}: approx. ₱${Math.round(distanceKm*t.rate)}`;
+    const distanceKm = (route.summary.totalDistance/1000).toFixed(2);
+    const li=document.createElement('li');
+    li.textContent=`${t.type}: approx. ₱${Math.round(distanceKm*t.rate)}`;
     tlist.appendChild(li);
   });
 
@@ -166,6 +164,22 @@ routingControl.on('routesfound', function(e){
   if(segment.length>0){
     L.polyline(segment.map(s=>[s.lat,s.lng]),{color:segment[0].traffic?'red':'#42e695',weight:6}).addTo(map);
   }
+
+  // Transport stations along route
+  const stations = [
+    {name:"Visayas Avenue Station", distance:0.01, time:1},
+    {name:"Elliptical Road Station", distance:2.8, time:5},
+    {name:"Commonwealth Avenue Station", distance:3.5, time:7},
+    {name:"UP Diliman Station", distance:4.5, time:10},
+    {name:"FEU Diliman Station", distance:6.7, time:12},
+  ];
+  const stationsList = document.getElementById('stations-list');
+  stationsList.innerHTML = "";
+  stations.forEach(s=>{
+    const li = document.createElement('li');
+    li.textContent = `${s.name} — ${s.distance.toFixed(1)} km, ${s.time} min`;
+    stationsList.appendChild(li);
+  });
 });
 
 // Panel toggle
@@ -176,21 +190,9 @@ function togglePanel(id){
   else { content.style.display='none'; btn.textContent='+'; }
 }
 
-// Fullscreen toggle
-let isFullscreen = false;
-function toggleFullscreen(){
-  const panels = document.querySelectorAll('.panel');
-  const btn = document.getElementById('fullscreen-btn');
-  if(!isFullscreen){
-    panels.forEach(p=>p.style.display='none');
-    btn.textContent = "Exit Full Screen";
-    isFullscreen = true;
-  } else {
-    panels.forEach(p=>p.style.display='block');
-    btn.textContent = "Full Screen";
-    isFullscreen = false;
-  }
-  map.invalidateSize();
+// QR code button
+function openQR(){
+  window.open('https://example.com/commuteiq-route-guide','_blank');
 }
 </script>
 </body>

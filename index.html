@@ -6,51 +6,84 @@
 <title>COMMUTEIQ - Campus Route</title>
 <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.2/dist/tailwind.min.css" rel="stylesheet">
 <style>
-body { font-family: 'Inter', sans-serif; overflow-x: hidden; background: linear-gradient(135deg,#1e3c72,#2a5298); min-height:100vh; color:#fff; }
-.floating-circle { position: absolute; border-radius: 50%; opacity: 0.4; animation: float 10s infinite ease-in-out alternate; mix-blend-mode: overlay; }
+body { 
+  font-family: 'Inter', sans-serif; 
+  overflow-x: hidden; 
+  background: linear-gradient(135deg,#1e3c72,#2a5298); 
+  min-height:100vh; 
+  color:#fff; 
+  margin:0; 
+}
+.floating-circle { 
+  position: absolute; 
+  border-radius: 50%; 
+  opacity: 0.4; 
+  animation: float 10s infinite ease-in-out alternate; 
+  mix-blend-mode: overlay; 
+  pointer-events: none; /* circles no longer block clicks */
+}
 .circle1 { width:300px;height:300px;background:#ff6ec7;top:-50px;left:-50px; animation-delay:0s;}
 .circle2 { width:250px;height:250px;background:#42e695;bottom:-60px;right:-40px; animation-delay:3s;}
 .circle3 { width:200px;height:200px;background:#4776e6;top:20%;right:20%; animation-delay:6s;}
-@keyframes float {0%{transform:translateY(0) translateX(0);}50%{transform:translateY(-20px) translateX(10px);}100%{transform:translateY(0) translateX(0);}}
+@keyframes float {
+  0%{transform:translateY(0) translateX(0);}
+  50%{transform:translateY(-20px) translateX(10px);}
+  100%{transform:translateY(0) translateX(0);}
+}
+.fade { opacity:0; animation:fadeIn 1s forwards; }
+@keyframes fadeIn{0%{opacity:0;transform:translateY(20px);}100%{opacity:1;transform:translateY(0);}}
 h1 { font-size:4rem; font-weight:700; margin-bottom:0.5rem; text-align:center; }
 p { font-size:1.2rem; margin-bottom:2rem; text-align:center; }
 button:hover{transform:translateY(-3px); box-shadow:0 8px 20px rgba(0,0,0,0.2); transition:all 0.3s ease;}
+/* Ensure content is clickable on top of circles */
+.content-wrapper {
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
+}
 </style>
 </head>
 <body class="flex flex-col items-center justify-center min-h-screen relative">
 
+<!-- Floating circles -->
 <div class="floating-circle circle1"></div>
 <div class="floating-circle circle2"></div>
 <div class="floating-circle circle3"></div>
 
-<h1 class="fade">COMMUTEIQ</h1>
-<p class="fade">Fastest campus routes & real-time traffic alerts.</p>
+<!-- Main content -->
+<div class="content-wrapper flex flex-col items-center justify-center text-center px-4">
+  <h1 class="fade">COMMUTEIQ</h1>
+  <p class="fade">Fastest campus routes & real-time traffic alerts.</p>
 
-<div class="flex flex-col md:flex-row gap-4 fade">
-  <select id="start" class="p-3 rounded-lg border w-64 focus:ring-2 focus:ring-blue-400">
-    <option value="">Select Start</option>
-    <option value="FEU Manila">FEU Manila</option>
-    <option value="FEU Diliman">FEU Diliman</option>
-    <option value="Quezon City">Quezon City</option>
-    <option value="FEU Alabang">FEU Alabang</option>
-  </select>
+  <div class="flex flex-col md:flex-row gap-4 fade">
+    <select id="start" class="p-3 rounded-lg border w-64 focus:ring-2 focus:ring-blue-400">
+      <option value="">Select Start</option>
+      <option value="FEU Manila">FEU Manila</option>
+      <option value="FEU Diliman">FEU Diliman</option>
+      <option value="Quezon City">Quezon City</option>
+      <option value="FEU Alabang">FEU Alabang</option>
+    </select>
 
-  <select id="end" class="p-3 rounded-lg border w-64 focus:ring-2 focus:ring-blue-400">
-    <option value="">Select Destination</option>
-    <option value="FEU Manila">FEU Manila</option>
-    <option value="FEU Diliman">FEU Diliman</option>
-    <option value="Quezon City">Quezon City</option>
-    <option value="FEU Alabang">FEU Alabang</option>
-  </select>
+    <select id="end" class="p-3 rounded-lg border w-64 focus:ring-2 focus:ring-blue-400">
+      <option value="">Select Destination</option>
+      <option value="FEU Manila">FEU Manila</option>
+      <option value="FEU Diliman">FEU Diliman</option>
+      <option value="Quezon City">Quezon City</option>
+      <option value="FEU Alabang">FEU Alabang</option>
+    </select>
 
-  <button onclick="goToMap()" class="bg-blue-500 px-5 py-3 rounded-lg font-semibold hover:bg-blue-600">Find Route</button>
+    <button onclick="goToMap()" class="bg-blue-500 px-5 py-3 rounded-lg font-semibold hover:bg-blue-600">Find Route</button>
+  </div>
 </div>
 
 <script>
 function goToMap() {
   const start = document.getElementById("start").value;
   const end = document.getElementById("end").value;
-  if(!start || !end){ alert("Select both start and destination."); return; }
+  if(!start || !end){ 
+    alert("Select both start and destination."); 
+    return; 
+  }
   // Navigate to map.html with query parameters
   window.location.href = `map.html?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
 }

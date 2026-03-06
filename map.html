@@ -6,38 +6,9 @@
 <title>COMMUTEIQ - Map</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"/>
-<style>
-html, body { height:100%; margin:0; font-family:'Inter',sans-serif; background:#1e1e2f; color:#fff;}
-#map { width:100%; height:100%; }
-
-/* Panels */
-.panel{
-  position:absolute; left:10px; background:rgba(30,30,47,0.95);
-  padding:12px; border-radius:12px; z-index:1000; width:240px; box-shadow:0 4px 12px rgba(0,0,0,0.3);
-  font-size:14px; line-height:1.4;
-}
-.panel h3{ margin:0; display:flex; justify-content:space-between; align-items:center; font-size:16px; font-weight:600; cursor:pointer;}
-.panel-content{ margin-top:6px; }
-button.toggle-btn{ background:#42e695;color:#1e1e2f;padding:2px 6px;border:none;border-radius:6px;font-size:14px;cursor:pointer;font-weight:600; }
-#distancePanel{top:10px;} 
-#transport{top:170px;} 
-#alerts{top:310px;} 
-#stations{top:450px;}
-@media screen and (max-width:600px){
-  .panel{ width:90%; left:50%; transform:translateX(-50%);}
-  #distancePanel{top:auto; bottom:290px;}
-  #transport{top:auto; bottom:210px;}
-  #alerts{top:auto; bottom:130px;}
-  #stations{top:auto; bottom:50px;}
-  .panel h3{ font-size:18px;}
-  .panel-content{ font-size:16px;}
-}
-ul{ padding-left:18px; margin:0; } 
-li{ margin-bottom:4px;}
-</style>
+<link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-
 <div id="map"></div>
 
 <!-- Panels -->
@@ -81,83 +52,6 @@ li{ margin-bottom:4px;}
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
-<script>
-// Get start & end from URL
-const params = new URLSearchParams(window.location.search);
-const startName = params.get('start') || 'FEU Manila';
-const endName = params.get('end') || 'FEU Diliman';
-
-// Initialize map
-const map = L.map('map').setView([14.63,121.05],12);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
-  attribution:'&copy; OpenStreetMap contributors', subdomains:'abcd', maxZoom:19, opacity:0.95
-}).addTo(map);
-
-// Locations
-const locations = {
-  "FEU Manila":[14.6076,121.0519],
-  "FEU Diliman":[14.6543,121.0734],
-  "Quezon City":[14.676,121.043],
-  "FEU Alabang":[14.4082,121.038]
-};
-
-const start = L.latLng(...locations[startName]);
-const destination = L.latLng(...locations[endName]);
-
-// Stations & Terminals
-const stations = [
-  {name:"FEU Manila Station", lat:14.6076, lng:121.0519},
-  {name:"Tricycle Terminal 1", lat:14.6085, lng:121.0525},
-  {name:"Tricycle Terminal 2", lat:14.6070, lng:121.0500},
-  {name:"Visayas Avenue Station", lat:14.6765, lng:121.0430},
-  {name:"Elliptical Road Station", lat:14.6490, lng:121.0290},
-  {name:"Commonwealth Avenue Station", lat:14.6480, lng:121.0370},
-  {name:"FEU Diliman Station", lat:14.6543, lng:121.0734},
-];
-
-// Add station markers and populate list
-stations.forEach(s=>{
-  const li=document.createElement('li'); li.textContent=s.name; document.getElementById('stations-list').appendChild(li);
-  const iconUrl = s.name.includes("Tricycle") ? 'https://maps.gstatic.com/mapfiles/ms2/micons/orange-dot.png':'https://maps.gstatic.com/mapfiles/ms2/micons/blue-dot.png';
-  const marker = L.marker([s.lat,s.lng],{icon:L.icon({iconUrl:iconUrl,iconSize:[32,32]})}).addTo(map);
-  marker.bindPopup(`<b>${s.name}</b>`);
-});
-
-// Live GPS
-let userMarker;
-if(navigator.geolocation){
-  navigator.geolocation.watchPosition(pos=>{
-    const userLatLng = L.latLng(pos.coords.latitude,pos.coords.longitude);
-    if(!userMarker){
-      userMarker = L.marker(userLatLng,{icon:L.icon({iconUrl:'https://maps.gstatic.com/mapfiles/ms2/micons/man.png',iconSize:[32,32]})}).addTo(map).bindPopup("You are here").openPopup();
-      map.setView(userLatLng,14);
-    } else userMarker.setLatLng(userLatLng);
-  },err=>console.error(err),{enableHighAccuracy:true});
-}
-
-// Routing
-const routeControl = L.Routing.control({
-  waypoints:[start,destination],
-  lineOptions:{styles:[{color:'#42e695',weight:5}]},
-  createMarker:i=>i===0 ? L.marker(start,{icon:L.icon({iconUrl:'https://maps.gstatic.com/mapfiles/ms2/micons/green.png',iconSize:[32,32]})}) :
-             i===1 ? L.marker(destination,{icon:L.icon({iconUrl:'https://maps.gstatic.com/mapfiles/ms2/micons/red.png',iconSize:[32,32]})}) : null,
-  routeWhileDragging:false, addWaypoints:false
-}).addTo(map);
-
-// Update distance & duration
-routeControl.on('routesfound',e=>{
-  const route=e.routes[0];
-  document.getElementById('distance').textContent=`Distance: ${(route.summary.totalDistance/1000).toFixed(2)} km`;
-  document.getElementById('duration').textContent=`Duration: ${Math.round(route.summary.totalTime/60)} mins`;
-});
-
-// Panel toggle
-function togglePanel(id){
-  const content=document.getElementById(id).querySelector('.panel-content');
-  const btn=document.querySelector('#'+id+' .toggle-btn');
-  if(content.style.display==='none'){ content.style.display='block'; btn.textContent='–'; }
-  else { content.style.display='none'; btn.textContent='+'; }
-}
-</script>
+<script src="map.js"></script>
 </body>
 </html>

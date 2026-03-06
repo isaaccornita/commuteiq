@@ -1,61 +1,157 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>COMMUTEIQ: Smarter Routes</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body{
-      font-family: Arial;
-      text-align:center;
-      background:#f4f6f8;
-      padding:20px;
-    }
 
-    .card{
-      background:white;
-      padding:20px;
-      border-radius:10px;
-      box-shadow:0 4px 10px rgba(0,0,0,0.1);
-      max-width:400px;
-      margin:auto;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    input,button{
-      width:100%;
-      padding:10px;
-      margin-top:10px;
-      border-radius:6px;
-      border:1px solid #ccc;
-    }
+<title>COMMUTEIQ - Smarter Routes</title>
 
-    button{
-      background:#2b7cff;
-      color:white;
-      border:none;
-    }
-  </style>
+<style>
+
+body{
+font-family: Arial;
+margin:0;
+background:#f2f4f8;
+}
+
+header{
+background:#2563eb;
+color:white;
+padding:15px;
+text-align:center;
+font-size:22px;
+font-weight:bold;
+}
+
+.container{
+padding:20px;
+}
+
+.card{
+background:white;
+padding:20px;
+border-radius:12px;
+box-shadow:0 4px 12px rgba(0,0,0,0.1);
+margin-bottom:20px;
+}
+
+input{
+width:100%;
+padding:12px;
+margin-top:10px;
+border-radius:8px;
+border:1px solid #ccc;
+}
+
+button{
+width:100%;
+padding:12px;
+margin-top:15px;
+border:none;
+border-radius:8px;
+background:#2563eb;
+color:white;
+font-size:16px;
+cursor:pointer;
+}
+
+button:hover{
+background:#1e4fd1;
+}
+
+#map{
+width:100%;
+height:300px;
+border-radius:10px;
+margin-top:15px;
+}
+
+.result{
+margin-top:10px;
+font-size:14px;
+}
+
+</style>
+
 </head>
 
 <body>
 
+<header>
+COMMUTEIQ 🚍
+</header>
+
+<div class="container">
+
 <div class="card">
-<h2>COMMUTEIQ</h2>
-<p>Smarter Routes for Commuters</p>
 
-<input type="text" placeholder="Enter Starting Point">
-<input type="text" placeholder="Enter Destination">
+<h3>Find Smart Route</h3>
 
-<button onclick="showRoute()">Find Route</button>
+<input id="start" placeholder="Starting Location">
 
-<p id="result"></p>
+<input id="destination" placeholder="Destination">
+
+<button onclick="calculateRoute()">Find Route</button>
+
+<div class="result" id="routeInfo"></div>
+
+</div>
+
+<div id="map"></div>
 
 </div>
 
 <script>
-function showRoute(){
-document.getElementById("result").innerHTML =
-"Recommended Route: Take an E-Jeep via Commonwealth Avenue. Estimated Fare: ₱25. Time: 20 mins.";
+
+let map;
+let directionsService;
+let directionsRenderer;
+
+function initMap(){
+
+map = new google.maps.Map(document.getElementById("map"),{
+center:{lat:14.6760,lng:121.0437},
+zoom:13
+});
+
+directionsService = new google.maps.DirectionsService();
+directionsRenderer = new google.maps.DirectionsRenderer();
+
+directionsRenderer.setMap(map);
+
 }
+
+function calculateRoute(){
+
+let start=document.getElementById("start").value;
+let destination=document.getElementById("destination").value;
+
+directionsService.route({
+
+origin:start,
+destination:destination,
+travelMode:"TRANSIT"
+
+},function(result,status){
+
+if(status=="OK"){
+
+directionsRenderer.setDirections(result);
+
+document.getElementById("routeInfo").innerHTML=
+"Best commute route found 🚍<br>Estimated time and transport options displayed on map.";
+
+}
+
+});
+
+}
+
+</script>
+
+<script async
+src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap">
 </script>
 
 </body>

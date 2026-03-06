@@ -87,15 +87,15 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
 const start = L.latLng(14.6076,121.0519); // FEU Manila
 const destination = L.latLng(14.6543,121.0734); // FEU Diliman
 
-// Stations & terminals
+// Stations & terminals (Metro Manila only)
 const stations = [
+  {name:"FEU Manila Station", lat:14.6076, lng:121.0519},
+  {name:"Tricycle Terminal 1", lat:14.6085, lng:121.0525},
+  {name:"Tricycle Terminal 2", lat:14.6070, lng:121.0500},
   {name:"Visayas Avenue Station", lat:14.6765, lng:121.0430},
   {name:"Elliptical Road Station", lat:14.6490, lng:121.0290},
   {name:"Commonwealth Avenue Station", lat:14.6480, lng:121.0370},
-  {name:"UP Diliman Station", lat:14.6570, lng:121.0740},
   {name:"FEU Diliman Station", lat:14.6543, lng:121.0734},
-  {name:"Tricycle Terminal 1", lat:14.6550, lng:121.0720},
-  {name:"Tricycle Terminal 2", lat:14.6500, lng:121.0700},
 ];
 
 stations.forEach(s=>{

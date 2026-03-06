@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>COMMUTEIQ Map - Stations & Terminals</title>
+<title>COMMUTEIQ Map - Live GPS</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
 <style>
@@ -20,20 +20,11 @@ html, body { height:100%; margin:0; font-family:sans-serif; }
 .panel-content { margin-top:5px; font-size:14px; }
 button.toggle-btn { background:#1e3c72;color:white;padding:0 5px;border-radius:3px; font-size:14px; cursor:pointer; }
 
-/* Panel positions */
 #distancePanel{top:10px;}
 #transport{top:130px;}
 #alerts{top:250px;}
 #stations{top:370px;}
 
-/* QR button */
-#qr-btn {
-  position:absolute; bottom:20px; right:20px; z-index:1100;
-  background:#ff3b30; color:white; border:none; padding:12px 16px;
-  border-radius:50%; font-size:16px; cursor:pointer; box-shadow:0 3px 6px rgba(0,0,0,0.3);
-}
-
-/* Mobile */
 @media screen and (max-width: 600px){
   .panel { width:90%; left:50%; transform:translateX(-50%); }
   #distancePanel{top:auto; bottom:290px;}
@@ -42,14 +33,11 @@ button.toggle-btn { background:#1e3c72;color:white;padding:0 5px;border-radius:3
   #stations{top:auto; bottom:50px;}
   .panel h3 { font-size:18px;}
   .panel-content { font-size:16px;}
-  #qr-btn { padding:16px 18px; font-size:18px; bottom:30px; right:20px;}
 }
 </style>
 </head>
 <body>
 <div id="map"></div>
-
-<button id="qr-btn" onclick="openQR()">QR</button>
 
 <!-- Distance & Duration -->
 <div id="distancePanel" class="panel">
@@ -84,7 +72,7 @@ button.toggle-btn { background:#1e3c72;color:white;padding:0 5px;border-radius:3
   </div>
 </div>
 
-<!-- Transport Stations -->
+<!-- Stations & Terminals -->
 <div id="stations" class="panel">
   <h3>Stations & Terminals <button class="toggle-btn" onclick="togglePanel('stations')">–</button></h3>
   <div class="panel-content">
@@ -102,7 +90,7 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
   attribution:'&copy; OpenStreetMap contributors', subdomains:'abcd', maxZoom:19, opacity:0.95
 }).addTo(map);
 
-// Stations & Terminals with coordinates, distance & time
+// Stations & Terminals
 const stations = [
   {name:"Visayas Avenue Station", lat:14.6765, lng:121.0430, distance:0.01, time:1},
   {name:"Elliptical Road Station", lat:14.6490, lng:121.0290, distance:2.8, time:5},
@@ -113,7 +101,7 @@ const stations = [
   {name:"Tricycle Terminal 2", lat:14.6500, lng:121.0700, distance:7.2, time:14},
 ];
 
-// Populate list & map markers
+// Add stations to map & list
 const stationsList = document.getElementById('stations-list');
 stations.forEach(s=>{
   const li = document.createElement('li');
@@ -124,13 +112,32 @@ stations.forEach(s=>{
   const marker = L.marker([s.lat, s.lng],{
     icon:L.icon({iconUrl: iconUrl, iconSize:[32,32]})
   }).addTo(map);
-  marker.bindPopup(`
-    <b>${s.name}</b><br>
-    Distance: ${s.distance.toFixed(1)} km<br>
-    Time: ${s.time} min<br>
-    <img src="https://api.qrserver.com/v1/create-qr-code/?data=https://example.com/commuteiq-route-guide&size=80x80" alt="QR Code">
-  `);
+  marker.bindPopup(`<b>${s.name}</b><br>Distance: ${s.distance.toFixed(1)} km<br>Time: ${s.time} min`);
 });
+
+// Live GPS marker
+let userMarker;
+function updateUserLocation(position){
+  const lat = position.coords.latitude;
+  const lng = position.coords.longitude;
+  if(!userMarker){
+    userMarker = L.marker([lat,lng],{
+      icon:L.icon({iconUrl:'https://maps.gstatic.com/mapfiles/ms2/micons/man.png',iconSize:[32,32]})
+    }).addTo(map).bindPopup("You are here").openPopup();
+    map.setView([lat,lng],14);
+  } else {
+    userMarker.setLatLng([lat,lng]);
+  }
+}
+
+// Watch user position
+if(navigator.geolocation){
+  navigator.geolocation.watchPosition(updateUserLocation, err=>{
+    console.error("GPS error:", err);
+  }, {enableHighAccuracy:true, maximumAge:1000, timeout:5000});
+} else {
+  alert("Geolocation is not supported by this browser.");
+}
 
 // Panel toggle
 function togglePanel(id){
@@ -139,9 +146,6 @@ function togglePanel(id){
   if(content.style.display==='none'){ content.style.display='block'; btn.textContent='–'; }
   else { content.style.display='none'; btn.textContent='+'; }
 }
-
-// QR button
-function openQR(){ window.open('https://example.com/commuteiq-route-guide','_blank'); }
 </script>
 </body>
 </html>

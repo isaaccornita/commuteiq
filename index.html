@@ -3,75 +3,97 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>COMMUTEIQ Map - OSM Leaflet</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+<title>COMMUTEIQ - Smarter Routes</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.2/dist/tailwind.min.css" rel="stylesheet">
+<script src="qrcode.min.js"></script>
 <style>
-  html, body { height: 100%; margin: 0; }
-  #map { width: 100%; height: 100%; }
+body {
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  position: relative;
+  min-height: 100vh;
+}
+.floating-circle { position: absolute; border-radius: 50%; opacity: 0.4; animation: float 10s infinite ease-in-out alternate; mix-blend-mode: overlay; }
+.circle1 { width: 300px; height: 300px; background: #ff6ec7; top: -50px; left: -50px; animation-delay: 0s; }
+.circle2 { width: 250px; height: 250px; background: #42e695; bottom: -60px; right: -40px; animation-delay: 3s; }
+.circle3 { width: 200px; height: 200px; background: #4776e6; top: 20%; right: 20%; animation-delay: 6s; }
+@keyframes float { 0% { transform: translateY(0px) translateX(0px); } 50% { transform: translateY(-20px) translateX(10px); } 100% { transform: translateY(0px) translateX(0px); } }
+.fade-in { opacity: 0; animation: fadeIn 1s forwards; }
+.delay-1 { animation-delay: 0.5s; }
+.delay-2 { animation-delay: 1s; }
+.delay-3 { animation-delay: 1.5s; }
+@keyframes fadeIn { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
+button:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.2); transition: all 0.3s ease; }
 </style>
 </head>
-<body>
-<div id="map"></div>
+<body class="flex flex-col items-center justify-center min-h-screen relative">
 
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+<div class="floating-circle circle1"></div>
+<div class="floating-circle circle2"></div>
+<div class="floating-circle circle3"></div>
+
+<div class="relative z-10 flex flex-col items-center justify-center text-center px-4">
+  <img src="logo.png" alt="COMMUTEIQ Logo" class="w-32 mb-6 fade-in delay-1">
+
+  <h1 class="text-5xl font-bold text-white mb-3 fade-in delay-2">COMMUTEIQ</h1>
+  <p class="text-white mb-6 text-lg fade-in delay-2">
+    Smarter Routes, Faster Journeys.<br>Scan the QR code or choose locations.
+  </p>
+
+  <div id="qrcode" class="mb-6 fade-in delay-3"></div>
+
+  <div class="flex flex-col md:flex-row gap-4 fade-in delay-3">
+    <select id="start" class="p-3 rounded-lg border border-gray-200 text-gray-800 w-64 focus:ring-2 focus:ring-blue-400">
+      <option value="">Select Start</option>
+      <option value="Quezon City">Quezon City</option>
+      <option value="FEU Diliman">FEU Diliman</option>
+      <option value="FEU Manila">FEU Manila</option>
+      <option value="FEU Alabang">FEU Alabang</option>
+      <option value="Makati City">Makati City</option>
+      <option value="Pasig City">Pasig City</option>
+      <option value="Taguig City">Taguig City</option>
+      <option value="Manila City">Manila City</option>
+      <option value="Caloocan City">Caloocan City</option>
+      <option value="Pasay City">Pasay City</option>
+    </select>
+
+    <select id="end" class="p-3 rounded-lg border border-gray-200 text-gray-800 w-64 focus:ring-2 focus:ring-blue-400">
+      <option value="">Select Destination</option>
+      <option value="Quezon City">Quezon City</option>
+      <option value="FEU Diliman">FEU Diliman</option>
+      <option value="FEU Manila">FEU Manila</option>
+      <option value="FEU Alabang">FEU Alabang</option>
+      <option value="Makati City">Makati City</option>
+      <option value="Pasig City">Pasig City</option>
+      <option value="Taguig City">Taguig City</option>
+      <option value="Manila City">Manila City</option>
+      <option value="Caloocan City">Caloocan City</option>
+      <option value="Pasay City">Pasay City</option>
+    </select>
+
+    <button onclick="goToMap()" class="bg-blue-500 px-5 py-3 rounded-lg font-semibold hover:bg-blue-600">
+      Find Route
+    </button>
+  </div>
+</div>
 
 <script>
-const map = L.map('map').setView([14.646, 121.035], 12);
+  new QRCode(document.getElementById("qrcode"), {
+    text: "map.html",
+    width: 180,
+    height: 180,
+    colorDark : "#ffffff",
+    colorLight : "transparent",
+  });
 
-// OSM tiles
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; OpenStreetMap contributors'
-}).addTo(map);
+  function goToMap() {
+    const start = document.getElementById("start").value;
+    const end = document.getElementById("end").value;
 
-// Predefined Metro Manila locations
-const locations = {
-  "Quezon City":[14.6760, 121.0437],
-  "FEU Diliman":[14.6543, 121.0734],
-  "FEU Manila":[14.6090, 120.9920],
-  "FEU Alabang":[14.4144, 121.0419],
-  "Makati City":[14.5547, 121.0244],
-  "Pasig City":[14.5764, 121.0851],
-  "Taguig City":[14.5176, 121.0509],
-  "Manila City":[14.5995, 120.9842],
-  "Caloocan City":[14.7569, 121.0450],
-  "Pasay City":[14.5366, 121.0011]
-};
-
-// Get start/end from URL
-const urlParams = new URLSearchParams(window.location.search);
-const startName = urlParams.get('start') || "Quezon City";
-const endName = urlParams.get('end') || "Makati City";
-
-const start = locations[startName];
-const end = locations[endName];
-
-if(!start || !end) alert("Invalid start/end location.");
-
-// Add routing control using OSRM demo server
-L.Routing.control({
-  waypoints: [
-    L.latLng(start[0], start[1]),
-    L.latLng(end[0], end[1])
-  ],
-  router: L.Routing.osrmv1({
-    serviceUrl: 'https://router.project-osrm.org/route/v1'
-  }),
-  routeWhileDragging: false,
-  lineOptions: {
-    styles: [{ color: '#42e695', weight: 5 }]
-  },
-  createMarker: function(i, wp) {
-    return L.marker(wp.latLng, {
-      icon: L.icon({
-        iconUrl: i === 0 ? 'https://maps.gstatic.com/mapfiles/ms2/micons/green.png' : 'https://maps.gstatic.com/mapfiles/ms2/micons/red.png',
-        iconSize: [32, 32]
-      })
-    });
+    if(!start || !end) { alert("Please select both start and destination."); return; }
+    window.location.href = `map.html?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
   }
-}).addTo(map);
-
 </script>
 </body>
 </html>

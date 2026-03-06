@@ -10,34 +10,27 @@
 html, body { height:100%; margin:0; font-family:'Inter',sans-serif; background:#1e1e2f; color:#fff; }
 #map { width:100%; height:100%; }
 
-/* Bottom panels stacked */
+/* Bottom panels stacked properly */
 .bottom-panel {
-  position: fixed; left:0; right:0;
+  position: fixed; left:10px; right:10px;
   background: rgba(30,30,47,0.95);
-  border-top-left-radius:20px; border-top-right-radius:20px;
+  border-radius:16px;
   box-shadow:0 -4px 12px rgba(0,0,0,0.4);
-  padding:8px 12px; z-index:1000;
+  padding:10px 12px; z-index:1000;
   transition: transform 0.3s ease;
-  max-height: 200px; overflow:hidden;
+  max-height: 180px; overflow:hidden;
 }
-
-/* Only header visible when collapsed */
-.bottom-panel.collapsed .panel-content {
-  display: none;
-}
-
-/* Header style */
 .bottom-panel h3 {
   margin:0; display:flex; justify-content:space-between; align-items:center;
-  cursor:pointer; font-size:14px; font-weight:600;
-  padding:4px 0;
+  cursor:pointer; font-size:14px; font-weight:600; padding:4px 0;
 }
+.bottom-panel.collapsed .panel-content { display:none; }
 
 /* Stacked positions */
-#distancePanel { bottom:0; }
-#transportPanel { bottom:60px; }
-#alertsPanel { bottom:120px; }
-#stationsPanel { bottom:180px; }
+#distancePanel { bottom:10px; }
+#transportPanel { bottom:200px; }
+#alertsPanel { bottom:390px; }
+#stationsPanel { bottom:580px; }
 
 /* List styling */
 ul{ padding-left:18px; margin:0; } 
@@ -45,7 +38,7 @@ li{ margin-bottom:4px; font-size:14px; }
 
 /* Toggle button */
 #toggleBtn{
-  position:fixed; bottom:240px; right:20px; z-index:1100;
+  position:fixed; bottom:10px; right:20px; z-index:1101;
   padding:10px 15px; border:none; border-radius:12px;
   background:#42e695; color:#000; font-weight:600; cursor:pointer;
 }
@@ -55,20 +48,11 @@ li{ margin-bottom:4px; font-size:14px; }
 
 <div id="map"></div>
 
-<button id="toggleBtn" onclick="toggleAllPanels()">Toggle Panels</button>
-
-<div id="distancePanel" class="bottom-panel">
-  <h3>Distance & Duration <span>–</span></h3>
+<!-- Panels -->
+<div id="stationsPanel" class="bottom-panel">
+  <h3>Stations & Terminals <span>–</span></h3>
   <div class="panel-content">
-    <p id="distance">Distance: -- km</p>
-    <p id="duration">Duration: -- mins</p>
-  </div>
-</div>
-
-<div id="transportPanel" class="bottom-panel">
-  <h3>Transport Options <span>–</span></h3>
-  <div class="panel-content">
-    <ul></ul>
+    <ul id="stations-list"></ul>
   </div>
 </div>
 
@@ -83,17 +67,27 @@ li{ margin-bottom:4px; font-size:14px; }
   </div>
 </div>
 
-<div id="stationsPanel" class="bottom-panel">
-  <h3>Stations & Terminals <span>–</span></h3>
+<div id="transportPanel" class="bottom-panel">
+  <h3>Transport Options <span>–</span></h3>
   <div class="panel-content">
-    <ul id="stations-list"></ul>
+    <ul></ul>
   </div>
 </div>
+
+<div id="distancePanel" class="bottom-panel">
+  <h3>Distance & Duration <span>–</span></h3>
+  <div class="panel-content">
+    <p id="distance">Distance: -- km</p>
+    <p id="duration">Duration: -- mins</p>
+  </div>
+</div>
+
+<button id="toggleBtn" onclick="toggleAllPanels()">Toggle Panels</button>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
 <script>
-// Default start and end
+// Start & end
 const startName = "FEU Manila";
 const endName = "FEU Diliman";
 

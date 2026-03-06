@@ -10,37 +10,42 @@
 html, body { height:100%; margin:0; font-family:'Inter',sans-serif; background:#1e1e2f; color:#fff; }
 #map { width:100%; height:100%; }
 
-/* Bottom panels stacked properly */
+/* Bottom panels stacked smaller */
 .bottom-panel {
   position: fixed; left:10px; right:10px;
   background: rgba(30,30,47,0.95);
-  border-radius:16px;
-  box-shadow:0 -4px 12px rgba(0,0,0,0.4);
-  padding:10px 12px; z-index:1000;
+  border-radius:12px;
+  box-shadow:0 -4px 10px rgba(0,0,0,0.4);
+  padding:6px 10px; z-index:1000;
   transition: transform 0.3s ease;
-  max-height: 180px; overflow:hidden;
+  max-height: 140px; overflow:hidden;
 }
+
+/* Panel headers */
 .bottom-panel h3 {
   margin:0; display:flex; justify-content:space-between; align-items:center;
-  cursor:pointer; font-size:14px; font-weight:600; padding:4px 0;
+  cursor:pointer; font-size:13px; font-weight:600; padding:3px 0;
 }
+
+/* Collapsed panels show only header */
 .bottom-panel.collapsed .panel-content { display:none; }
 
 /* Stacked positions */
 #distancePanel { bottom:10px; }
-#transportPanel { bottom:200px; }
-#alertsPanel { bottom:390px; }
-#stationsPanel { bottom:580px; }
+#transportPanel { bottom:160px; }
+#alertsPanel { bottom:310px; }
+#stationsPanel { bottom:460px; }
 
 /* List styling */
-ul{ padding-left:18px; margin:0; } 
-li{ margin-bottom:4px; font-size:14px; }
+ul{ padding-left:15px; margin:0; } 
+li{ margin-bottom:3px; font-size:13px; }
 
 /* Toggle button */
 #toggleBtn{
   position:fixed; bottom:10px; right:20px; z-index:1101;
-  padding:10px 15px; border:none; border-radius:12px;
+  padding:8px 12px; border:none; border-radius:10px;
   background:#42e695; color:#000; font-weight:600; cursor:pointer;
+  font-size:13px;
 }
 </style>
 </head>

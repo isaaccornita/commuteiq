@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>COMMUTEIQ Map - Live GPS + Route</title>
+<title>COMMUTEIQ Map - Dynamic GPS Routing</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"/>
 <style>
@@ -40,15 +40,15 @@ button.toggle-btn{ background:#1e3c72;color:white;padding:0 5px;border-radius:3p
 <div id="distancePanel" class="panel">
   <h3>Distance & Duration <button class="toggle-btn" onclick="togglePanel('distancePanel')">–</button></h3>
   <div class="panel-content">
-    <p id="distance">Distance: 13.43 km</p>
-    <p id="duration">Duration: 19 mins</p>
+    <p id="distance">Distance: -- km</p>
+    <p id="duration">Duration: -- mins</p>
   </div>
 </div>
 
 <div id="transport" class="panel">
   <h3>Transport Suggestions <button class="toggle-btn" onclick="togglePanel('transport')">–</button></h3>
   <div class="panel-content">
-    <ul id="transport-list">
+    <ul>
       <li>Jeep/Bus: approx. ₱134</li>
       <li>MRT/LRT: approx. ₱161</li>
       <li>Grab/Taxi: approx. ₱336</li>
@@ -59,7 +59,7 @@ button.toggle-btn{ background:#1e3c72;color:white;padding:0 5px;border-radius:3p
 <div id="alerts" class="panel">
   <h3>Traffic Alerts <button class="toggle-btn" onclick="togglePanel('alerts')">–</button></h3>
   <div class="panel-content">
-    <ul id="alert-list">
+    <ul>
       <li>Heavy traffic near EDSA Quezon Ave</li>
       <li>Construction on España Blvd</li>
       <li>Accident near C.M. Recto</li>
@@ -78,56 +78,12 @@ button.toggle-btn{ background:#1e3c72;color:white;padding:0 5px;border-radius:3p
 <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
 
 <script>
-// Initialize map
 const map = L.map('map').setView([14.646,121.035],12);
 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
   attribution:'&copy; OpenStreetMap contributors', subdomains:'abcd', maxZoom:19, opacity:0.95
 }).addTo(map);
 
-// Define start and end points
-const start = [14.6760,121.0437]; // Quezon City
-const end = [14.6543,121.0734];   // FEU Diliman
-
-// Routing control with green line
-const routingControl = L.Routing.control({
-  waypoints: [L.latLng(start[0],start[1]), L.latLng(end[0],end[1])],
-  lineOptions: {styles:[{color:'#42e695', weight:5}]},
-  createMarker: function(i, wp){
-    return L.marker(wp.latLng,{icon:L.icon({iconUrl:i===0?'https://maps.gstatic.com/mapfiles/ms2/micons/green.png':'https://maps.gstatic.com/mapfiles/ms2/micons/red.png',iconSize:[32,32]})});
-  },
-  routeWhileDragging:false,
-  addWaypoints:false,
-}).addTo(map);
-
-// Traffic hotspots (red segments)
-routingControl.on('routesfound', function(e){
-  const route = e.routes[0];
-  const coords = route.coordinates;
-
-  const trafficZones = [
-    {latMin:14.620, latMax:14.680, lngMin:121.010, lngMax:121.050},
-    {latMin:14.620, latMax:14.650, lngMin:121.020, lngMax:121.080},
-    {latMin:14.590, latMax:14.610, lngMin:120.980, lngMax:121.000}
-  ];
-
-  // Draw red segments for traffic
-  let segment = [];
-  coords.forEach(c=>{
-    let inTraffic = trafficZones.some(z=>c.lat>=z.latMin && c.lat<=z.latMax && c.lng>=z.lngMin && c.lng<=z.lngMax);
-    segment.push({lat:c.lat,lng:c.lng,traffic:inTraffic});
-  });
-  // Draw polyline segments
-  let lastTraffic = segment[0].traffic;
-  let path = [];
-  segment.forEach((s,i)=>{
-    path.push([s.lat,s.lng]);
-    if(i===segment.length-1 || s.traffic!==segment[i+1].traffic){
-      L.polyline(path,{color:lastTraffic?'red':'#42e695',weight:6}).addTo(map);
-      path = [];
-      if(i<segment.length-1) lastTraffic = segment[i+1].traffic;
-    }
-  });
-});
+const destination = L.latLng(14.6543,121.0734); // FEU Diliman
 
 // Stations & Terminals
 const stations = [
@@ -151,23 +107,47 @@ stations.forEach(s=>{
   marker.bindPopup(`<b>${s.name}</b><br>Distance: ${s.distance.toFixed(1)} km<br>Time: ${s.time} min`);
 });
 
-// Live GPS
+// Live GPS marker
 let userMarker;
-function updateUserLocation(pos){
-  const lat = pos.coords.latitude;
-  const lng = pos.coords.longitude;
+let routingControl;
+
+// Update route from user location to destination
+function updateRoute(position){
+  const userLatLng = L.latLng(position.coords.latitude, position.coords.longitude);
+
+  // Add user marker
   if(!userMarker){
-    userMarker = L.marker([lat,lng],{icon:L.icon({iconUrl:'https://maps.gstatic.com/mapfiles/ms2/micons/man.png',iconSize:[32,32]})}).addTo(map).bindPopup("You are here").openPopup();
-    map.setView([lat,lng],14);
-  } else {
-    userMarker.setLatLng([lat,lng]);
-  }
+    userMarker = L.marker(userLatLng,{icon:L.icon({iconUrl:'https://maps.gstatic.com/mapfiles/ms2/micons/man.png',iconSize:[32,32]})}).addTo(map).bindPopup("You are here").openPopup();
+    map.setView(userLatLng,14);
+  } else userMarker.setLatLng(userLatLng);
+
+  // Remove old routing control
+  if(routingControl) map.removeControl(routingControl);
+
+  // Create routing control
+  routingControl = L.Routing.control({
+    waypoints: [userLatLng,destination],
+    lineOptions:{styles:[{color:'#42e695',weight:5}]},
+    createMarker: ()=>null,
+    routeWhileDragging:false,
+    addWaypoints:false,
+  }).addTo(map);
+
+  // Update distance & duration panel
+  routingControl.on('routesfound', function(e){
+    const route = e.routes[0];
+    document.getElementById('distance').textContent = `Distance: ${route.summary.totalDistance/1000} km`;
+    document.getElementById('duration').textContent = `Duration: ${Math.round(route.summary.totalTime/60)} mins`;
+
+    // Optional: draw red traffic segments (hardcoded zones)
+    route.coordinates.forEach(c=>{});
+  });
 }
+
+// Watch GPS
 if(navigator.geolocation){
-  navigator.geolocation.watchPosition(updateUserLocation, err=>console.error(err), {enableHighAccuracy:true});
-} else {
-  alert("Geolocation not supported");
-}
+  navigator.geolocation.watchPosition(updateRoute, err=>console.error(err), {enableHighAccuracy:true});
+} else alert("Geolocation not supported");
 
 // Panel toggle
 function togglePanel(id){

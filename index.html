@@ -3,28 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>COMMUTEIQ - Smarter Routes</title>
+<title>COMMUTEIQ - Smarter Route</title>
 <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.2/dist/tailwind.min.css" rel="stylesheet">
 <script src="qrcode.min.js"></script>
 <style>
-body {
-  font-family: 'Inter', sans-serif;
-  overflow-x: hidden;
-  background: linear-gradient(135deg, #1e3c72, #2a5298);
-  position: relative;
-  min-height: 100vh;
-}
+body { font-family: 'Inter', sans-serif; overflow-x: hidden; background: linear-gradient(135deg,#1e3c72,#2a5298); min-height:100vh; }
 .floating-circle { position: absolute; border-radius: 50%; opacity: 0.4; animation: float 10s infinite ease-in-out alternate; mix-blend-mode: overlay; }
-.circle1 { width: 300px; height: 300px; background: #ff6ec7; top: -50px; left: -50px; animation-delay: 0s; }
-.circle2 { width: 250px; height: 250px; background: #42e695; bottom: -60px; right: -40px; animation-delay: 3s; }
-.circle3 { width: 200px; height: 200px; background: #4776e6; top: 20%; right: 20%; animation-delay: 6s; }
-@keyframes float { 0% { transform: translateY(0px) translateX(0px); } 50% { transform: translateY(-20px) translateX(10px); } 100% { transform: translateY(0px) translateX(0px); } }
-.fade-in { opacity: 0; animation: fadeIn 1s forwards; }
-.delay-1 { animation-delay: 0.5s; }
-.delay-2 { animation-delay: 1s; }
-.delay-3 { animation-delay: 1.5s; }
-@keyframes fadeIn { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
-button:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.2); transition: all 0.3s ease; }
+.circle1 { width:300px;height:300px;background:#ff6ec7;top:-50px;left:-50px; animation-delay:0s;}
+.circle2 { width:250px;height:250px;background:#42e695;bottom:-60px;right:-40px; animation-delay:3s;}
+.circle3 { width:200px;height:200px;background:#4776e6;top:20%;right:20%; animation-delay:6s;}
+@keyframes float {0%{transform:translateY(0) translateX(0);}50%{transform:translateY(-20px) translateX(10px);}100%{transform:translateY(0) translateX(0);}}
+.fade-in {opacity:0;animation:fadeIn 1s forwards;}
+.delay-1{animation-delay:0.5s;}
+.delay-2{animation-delay:1s;}
+.delay-3{animation-delay:1.5s;}
+@keyframes fadeIn{0%{opacity:0;transform:translateY(20px);}100%{opacity:1;transform:translateY(0);}}
+button:hover{transform:translateY(-3px);box-shadow:0 8px 20px rgba(0,0,0,0.2);transition: all 0.3s ease;}
 </style>
 </head>
 <body class="flex flex-col items-center justify-center min-h-screen relative">
@@ -35,63 +29,42 @@ button:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.
 
 <div class="relative z-10 flex flex-col items-center justify-center text-center px-4">
   <img src="logo.png" alt="COMMUTEIQ Logo" class="w-32 mb-6 fade-in delay-1">
-
   <h1 class="text-5xl font-bold text-white mb-3 fade-in delay-2">COMMUTEIQ</h1>
   <p class="text-white mb-6 text-lg fade-in delay-2">
-    Smarter Routes, Faster Journeys.<br>Scan the QR code or choose locations.
+    Fastest campus routes & real-time traffic alerts.
   </p>
 
   <div id="qrcode" class="mb-6 fade-in delay-3"></div>
 
   <div class="flex flex-col md:flex-row gap-4 fade-in delay-3">
-    <select id="start" class="p-3 rounded-lg border border-gray-200 text-gray-800 w-64 focus:ring-2 focus:ring-blue-400">
+    <select id="start" class="p-3 rounded-lg border w-64 focus:ring-2 focus:ring-blue-400">
       <option value="">Select Start</option>
       <option value="Quezon City">Quezon City</option>
       <option value="FEU Diliman">FEU Diliman</option>
       <option value="FEU Manila">FEU Manila</option>
       <option value="FEU Alabang">FEU Alabang</option>
-      <option value="Makati City">Makati City</option>
-      <option value="Pasig City">Pasig City</option>
-      <option value="Taguig City">Taguig City</option>
-      <option value="Manila City">Manila City</option>
-      <option value="Caloocan City">Caloocan City</option>
-      <option value="Pasay City">Pasay City</option>
     </select>
 
-    <select id="end" class="p-3 rounded-lg border border-gray-200 text-gray-800 w-64 focus:ring-2 focus:ring-blue-400">
+    <select id="end" class="p-3 rounded-lg border w-64 focus:ring-2 focus:ring-blue-400">
       <option value="">Select Destination</option>
       <option value="Quezon City">Quezon City</option>
       <option value="FEU Diliman">FEU Diliman</option>
       <option value="FEU Manila">FEU Manila</option>
       <option value="FEU Alabang">FEU Alabang</option>
-      <option value="Makati City">Makati City</option>
-      <option value="Pasig City">Pasig City</option>
-      <option value="Taguig City">Taguig City</option>
-      <option value="Manila City">Manila City</option>
-      <option value="Caloocan City">Caloocan City</option>
-      <option value="Pasay City">Pasay City</option>
     </select>
 
-    <button onclick="goToMap()" class="bg-blue-500 px-5 py-3 rounded-lg font-semibold hover:bg-blue-600">
-      Find Route
-    </button>
+    <button onclick="goToMap()" class="bg-blue-500 px-5 py-3 rounded-lg font-semibold hover:bg-blue-600">Find Route</button>
   </div>
 </div>
 
 <script>
-  new QRCode(document.getElementById("qrcode"), {
-    text: "map.html",
-    width: 180,
-    height: 180,
-    colorDark : "#ffffff",
-    colorLight : "transparent",
-  });
+  // QR code linking to map.html
+  new QRCode(document.getElementById("qrcode"), { text:"map.html", width:180, height:180, colorDark:"#ffffff", colorLight:"transparent" });
 
   function goToMap() {
     const start = document.getElementById("start").value;
     const end = document.getElementById("end").value;
-
-    if(!start || !end) { alert("Please select both start and destination."); return; }
+    if(!start || !end){ alert("Select both start and destination."); return; }
     window.location.href = `map.html?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
   }
 </script>

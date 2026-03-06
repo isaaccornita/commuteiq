@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>COMMUTEIQ Map - Night Mode with Traffic</title>
+<title>COMMUTEIQ Map - Realistic Traffic</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
 <style>
@@ -44,8 +44,6 @@ button { cursor:pointer; background:#1e3c72;color:white;padding:5px 10px;border-
 <script>
 // Initialize map
 const map = L.map('map').setView([14.646,121.035],12);
-
-// Night mode tiles
 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
   attribution:'&copy; OpenStreetMap contributors', subdomains:'abcd', maxZoom:19
 }).addTo(map);
@@ -65,6 +63,15 @@ const start = locations[startName];
 const end = locations[endName];
 if(!start||!end){ alert("Invalid location"); }
 
+// Known traffic hotspots (lat,lng bounds)
+const trafficZones = [
+  {name:"EDSA Quezon Ave", latMin:14.620, latMax:14.680, lngMin:121.010, lngMax:121.050},
+  {name:"España Blvd", latMin:14.620, latMax:14.650, lngMin:121.020, lngMax:121.080},
+  {name:"C.M. Recto Ave", latMin:14.590, latMax:14.610, lngMin:120.980, lngMax:121.000},
+  {name:"Aurora Blvd", latMin:14.640, latMax:14.660, lngMin:121.050, lngMax:121.080},
+  {name:"Taft Ave", latMin:14.580, latMax:14.610, lngMin:120.990, lngMax:121.000}
+];
+
 // Routing
 const routingControl = L.Routing.control({
   waypoints:[L.latLng(start[0],start[1]), L.latLng(end[0],end[1])],
@@ -78,7 +85,6 @@ const routingControl = L.Routing.control({
   }
 }).addTo(map);
 
-// When route is ready
 routingControl.on('routesfound', function(e){
   const route = e.routes[0];
   const coords = route.coordinates;
@@ -108,12 +114,22 @@ routingControl.on('routesfound', function(e){
   const alertList=document.getElementById('alert-list'); alertList.innerHTML="";
   alerts.forEach(a=>{ const li=document.createElement('li'); li.textContent=a; alertList.appendChild(li); });
 
-  // Multi-segment traffic visualization
-  const segmentLength = Math.floor(coords.length/5); // divide route into 5 segments
-  for(let i=0;i<coords.length-segmentLength;i+=segmentLength){
-    const segment = coords.slice(i,i+segmentLength+1);
-    const isTraffic = Math.random() < 0.5; // randomly mark traffic
-    L.polyline(segment,{color:isTraffic?'red':'#42e695',weight:6}).addTo(map);
+  // Highlight route with traffic zones
+  let segment = [];
+  coords.forEach((c,i)=>{
+    // Check if coordinate is in any traffic zone
+    let inTraffic = trafficZones.some(zone=>{
+      return c.lat >= zone.latMin && c.lat <= zone.latMax && c.lng >= zone.lngMin && c.lng <= zone.lngMax;
+    });
+    if(segment.length>0 && segment[segment.length-1].traffic !== inTraffic){
+      // Draw previous segment
+      L.polyline(segment.map(s=>[s.lat,s.lng]),{color:segment[0].traffic?'red':'#42e695',weight:6}).addTo(map);
+      segment = [];
+    }
+    segment.push({lat:c.lat,lng:c.lng,traffic:inTraffic});
+  });
+  if(segment.length>0){
+    L.polyline(segment.map(s=>[s.lat,s.lng]),{color:segment[0].traffic?'red':'#42e695',weight:6}).addTo(map);
   }
 });
 

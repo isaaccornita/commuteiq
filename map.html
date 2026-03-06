@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>COMMUTEIQ Map - Mobile Friendly</title>
+<title>COMMUTEIQ Map - Fullscreen Mobile</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
 <style>
@@ -14,6 +14,7 @@ html, body { height:100%; margin:0; font-family:sans-serif; }
 .panel {
   position:absolute; left:10px; background:rgba(255,255,255,0.95);
   padding:10px; border-radius:10px; z-index:1000; width:220px;
+  transition: all 0.3s ease;
 }
 .panel h3 { cursor:pointer; margin:0; display:flex; justify-content:space-between; align-items:center; font-size:16px;}
 .panel-content { margin-top:5px; font-size:14px; }
@@ -24,6 +25,13 @@ button.toggle-btn { background:#1e3c72;color:white;padding:0 5px;border-radius:3
 #transport{top:110px;}
 #alerts{top:250px;}
 
+/* Fullscreen button */
+#fullscreen-btn {
+  position:absolute; top:10px; right:10px; z-index:1100;
+  background:#1e3c72; color:white; border:none; padding:8px 12px; border-radius:6px;
+  font-size:14px; cursor:pointer;
+}
+
 /* Mobile responsiveness */
 @media screen and (max-width: 600px){
   .panel { width:90%; left:50%; transform:translateX(-50%); }
@@ -32,11 +40,14 @@ button.toggle-btn { background:#1e3c72;color:white;padding:0 5px;border-radius:3
   #alerts{top:auto; bottom:70px;}
   .panel h3 { font-size:18px;}
   .panel-content { font-size:16px;}
+  #fullscreen-btn { padding:10px 14px; font-size:16px;}
 }
 </style>
 </head>
 <body>
 <div id="map"></div>
+
+<button id="fullscreen-btn" onclick="toggleFullscreen()">Full Screen</button>
 
 <!-- Distance & Duration -->
 <div id="info" class="panel">
@@ -67,7 +78,7 @@ button.toggle-btn { background:#1e3c72;color:white;padding:0 5px;border-radius:3
 <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
 
 <script>
-// Initialize map (lighter night tiles for readability)
+// Initialize map
 const map = L.map('map').setView([14.646,121.035],12);
 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
   attribution:'&copy; OpenStreetMap contributors',
@@ -157,15 +168,29 @@ routingControl.on('routesfound', function(e){
   }
 });
 
-// Panel toggle function
+// Panel toggle
 function togglePanel(id){
   const content = document.getElementById(id+'-content');
   const btn = document.querySelector('#'+id+' .toggle-btn');
-  if(content.style.display === 'none'){
-    content.style.display = 'block'; btn.textContent = '–';
+  if(content.style.display === 'none'){ content.style.display='block'; btn.textContent='–'; }
+  else { content.style.display='none'; btn.textContent='+'; }
+}
+
+// Fullscreen toggle
+let isFullscreen = false;
+function toggleFullscreen(){
+  const panels = document.querySelectorAll('.panel');
+  const btn = document.getElementById('fullscreen-btn');
+  if(!isFullscreen){
+    panels.forEach(p=>p.style.display='none');
+    btn.textContent = "Exit Full Screen";
+    isFullscreen = true;
   } else {
-    content.style.display = 'none'; btn.textContent = '+';
+    panels.forEach(p=>p.style.display='block');
+    btn.textContent = "Full Screen";
+    isFullscreen = false;
   }
+  map.invalidateSize();
 }
 </script>
 </body>

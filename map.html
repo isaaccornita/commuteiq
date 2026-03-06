@@ -3,13 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>COMMUTEIQ Map - Campus Route</title>
+<title>COMMUTEIQ Map - Night Mode with Traffic</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
 <style>
 html, body { height:100%; margin:0; font-family:sans-serif; }
 #map { width:100%; height:100%; }
-#info, #transport, #alerts, #report { position:absolute; left:10px; background:rgba(255,255,255,0.9); padding:10px; border-radius:10px; z-index:1000; width:220px;}
+#info, #transport, #alerts, #report {
+  position:absolute; left:10px; background:rgba(255,255,255,0.9);
+  padding:10px; border-radius:10px; z-index:1000; width:220px;
+}
 #info{top:10px;} #transport{top:110px;} #alerts{top:250px;} #report{top:380px;}
 button { cursor:pointer; background:#1e3c72;color:white;padding:5px 10px;border-radius:5px;margin-top:5px;}
 </style>
@@ -39,11 +42,15 @@ button { cursor:pointer; background:#1e3c72;color:white;padding:5px 10px;border-
 <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
 
 <script>
-// Map center
+// Initialize map
 const map = L.map('map').setView([14.646,121.035],12);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
 
-// Predefined locations
+// Night mode tiles
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution:'&copy; OpenStreetMap contributors', subdomains:'abcd', maxZoom:19
+}).addTo(map);
+
+// Campus locations
 const locations = {
   "Quezon City":[14.6760,121.0437],
   "FEU Diliman":[14.6543,121.0734],
@@ -54,14 +61,13 @@ const locations = {
 const params = new URLSearchParams(window.location.search);
 const startName = params.get('start') || "Quezon City";
 const endName = params.get('end') || "FEU Diliman";
-
 const start = locations[startName];
 const end = locations[endName];
 if(!start||!end){ alert("Invalid location"); }
 
 // Routing
 const routingControl = L.Routing.control({
-  waypoints: [L.latLng(start[0],start[1]),L.latLng(end[0],end[1])],
+  waypoints:[L.latLng(start[0],start[1]), L.latLng(end[0],end[1])],
   router:L.Routing.osrmv1({serviceUrl:'https://router.project-osrm.org/route/v1'}),
   routeWhileDragging:false,
   lineOptions:{styles:[{color:'#42e695',weight:5}]},
@@ -72,9 +78,10 @@ const routingControl = L.Routing.control({
   }
 }).addTo(map);
 
-// Display distance, duration, transport, traffic alerts
+// When route is ready
 routingControl.on('routesfound', function(e){
   const route = e.routes[0];
+  const coords = route.coordinates;
   const distanceKm = (route.summary.totalDistance/1000).toFixed(2);
   const durationMin = Math.round(route.summary.totalTime/60);
   document.getElementById('distance').innerText = 'Distance: '+distanceKm+' km';
@@ -86,11 +93,9 @@ routingControl.on('routesfound', function(e){
     {type:"MRT/LRT", rate:12},
     {type:"Grab/Taxi", rate:25}
   ];
-  const tlist = document.getElementById('transport-list');
-  tlist.innerHTML="";
+  const tlist = document.getElementById('transport-list'); tlist.innerHTML="";
   transports.forEach(t=>{
-    const li=document.createElement('li');
-    li.textContent = `${t.type}: approx. ₱${Math.round(distanceKm*t.rate)}`;
+    const li=document.createElement('li'); li.textContent=`${t.type}: approx. ₱${Math.round(distanceKm*t.rate)}`;
     tlist.appendChild(li);
   });
 
@@ -98,24 +103,26 @@ routingControl.on('routesfound', function(e){
   const alerts = [
     "Heavy traffic near EDSA Quezon Ave",
     "Construction on España Blvd",
-    "Accident reported near C.M. Recto"
+    "Accident near C.M. Recto"
   ];
-  const alertList = document.getElementById('alert-list');
-  alertList.innerHTML="";
-  alerts.forEach(a=>{
-    const li=document.createElement('li');
-    li.textContent = a;
-    alertList.appendChild(li);
-  });
+  const alertList=document.getElementById('alert-list'); alertList.innerHTML="";
+  alerts.forEach(a=>{ const li=document.createElement('li'); li.textContent=a; alertList.appendChild(li); });
+
+  // Multi-segment traffic visualization
+  const segmentLength = Math.floor(coords.length/5); // divide route into 5 segments
+  for(let i=0;i<coords.length-segmentLength;i+=segmentLength){
+    const segment = coords.slice(i,i+segmentLength+1);
+    const isTraffic = Math.random() < 0.5; // randomly mark traffic
+    L.polyline(segment,{color:isTraffic?'red':'#42e695',weight:6}).addTo(map);
+  }
 });
 
-// Crowdsourced traffic reporting
-const reportList = document.getElementById('report-list');
+// Crowdsourced reporting
+const reportList=document.getElementById('report-list');
 function submitReport(){
   const text=document.getElementById('report-text').value;
   if(text===""){ alert("Enter a description"); return; }
-  const li=document.createElement('li'); li.textContent=text;
-  reportList.appendChild(li);
+  const li=document.createElement('li'); li.textContent=text; reportList.appendChild(li);
   document.getElementById('report-text').value="";
 }
 </script>

@@ -3,13 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>COMMUTEIQ Map - Stations & Landmarks</title>
+<title>COMMUTEIQ Map - Stations & Terminals</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
 <style>
 html, body { height:100%; margin:0; font-family:sans-serif; }
 #map { width:100%; height:100%; }
 
+/* Panels */
 .panel {
   position:absolute; left:10px; background:rgba(255,255,255,0.95);
   padding:10px; border-radius:10px; z-index:1000; width:220px;
@@ -19,21 +20,26 @@ html, body { height:100%; margin:0; font-family:sans-serif; }
 .panel-content { margin-top:5px; font-size:14px; }
 button.toggle-btn { background:#1e3c72;color:white;padding:0 5px;border-radius:3px; font-size:14px; cursor:pointer; }
 
-#stations{top:10px;}
-#transport{top:170px;}
-#alerts{top:310px;}
+/* Panel positions */
+#distancePanel{top:10px;}
+#transport{top:130px;}
+#alerts{top:250px;}
+#stations{top:370px;}
 
+/* QR button */
 #qr-btn {
   position:absolute; bottom:20px; right:20px; z-index:1100;
   background:#ff3b30; color:white; border:none; padding:12px 16px;
   border-radius:50%; font-size:16px; cursor:pointer; box-shadow:0 3px 6px rgba(0,0,0,0.3);
 }
 
+/* Mobile */
 @media screen and (max-width: 600px){
   .panel { width:90%; left:50%; transform:translateX(-50%); }
-  #stations{top:auto; bottom:210px;}
-  #transport{top:auto; bottom:140px;}
-  #alerts{top:auto; bottom:70px;}
+  #distancePanel{top:auto; bottom:290px;}
+  #transport{top:auto; bottom:210px;}
+  #alerts{top:auto; bottom:130px;}
+  #stations{top:auto; bottom:50px;}
   .panel h3 { font-size:18px;}
   .panel-content { font-size:16px;}
   #qr-btn { padding:16px 18px; font-size:18px; bottom:30px; right:20px;}
@@ -43,30 +49,46 @@ button.toggle-btn { background:#1e3c72;color:white;padding:0 5px;border-radius:3
 <body>
 <div id="map"></div>
 
-<!-- QR Button -->
 <button id="qr-btn" onclick="openQR()">QR</button>
 
-<!-- Transport Stations -->
-<div id="stations" class="panel">
-  <h3>Transport Stations <button class="toggle-btn" onclick="togglePanel('stations')">–</button></h3>
-  <div class="panel-content" id="stations-content">
-    <ul id="stations-list"></ul>
+<!-- Distance & Duration -->
+<div id="distancePanel" class="panel">
+  <h3>Distance & Duration <button class="toggle-btn" onclick="togglePanel('distancePanel')">–</button></h3>
+  <div class="panel-content">
+    <p id="distance">Distance: 13.43 km</p>
+    <p id="duration">Duration: 19 mins</p>
   </div>
 </div>
 
 <!-- Transport Suggestions -->
 <div id="transport" class="panel">
   <h3>Transport Suggestions <button class="toggle-btn" onclick="togglePanel('transport')">–</button></h3>
-  <div class="panel-content" id="transport-content">
-    <ul id="transport-list"></ul>
+  <div class="panel-content">
+    <ul id="transport-list">
+      <li>Jeep/Bus: approx. ₱134</li>
+      <li>MRT/LRT: approx. ₱161</li>
+      <li>Grab/Taxi: approx. ₱336</li>
+    </ul>
   </div>
 </div>
 
 <!-- Traffic Alerts -->
 <div id="alerts" class="panel">
   <h3>Traffic Alerts <button class="toggle-btn" onclick="togglePanel('alerts')">–</button></h3>
-  <div class="panel-content" id="alerts-content">
-    <ul id="alert-list"></ul>
+  <div class="panel-content">
+    <ul id="alert-list">
+      <li>Heavy traffic near EDSA Quezon Ave</li>
+      <li>Construction on España Blvd</li>
+      <li>Accident near C.M. Recto</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Transport Stations -->
+<div id="stations" class="panel">
+  <h3>Stations & Terminals <button class="toggle-btn" onclick="togglePanel('stations')">–</button></h3>
+  <div class="panel-content">
+    <ul id="stations-list"></ul>
   </div>
 </div>
 
@@ -76,134 +98,50 @@ button.toggle-btn { background:#1e3c72;color:white;padding:0 5px;border-radius:3
 <script>
 // Initialize map
 const map = L.map('map').setView([14.646,121.035],12);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-  attribution:'&copy; OpenStreetMap contributors',
-  subdomains:'abcd', maxZoom:19, opacity:0.95
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
+  attribution:'&copy; OpenStreetMap contributors', subdomains:'abcd', maxZoom:19, opacity:0.95
 }).addTo(map);
 
-// Campus locations
-const locations = {
-  "Quezon City":[14.6760,121.0437],
-  "FEU Diliman":[14.6543,121.0734],
-  "FEU Manila":[14.6090,120.9920],
-  "FEU Alabang":[14.4144,121.0419]
-};
-
-const params = new URLSearchParams(window.location.search);
-const startName = params.get('start') || "Quezon City";
-const endName = params.get('end') || "FEU Diliman";
-const start = locations[startName];
-const end = locations[endName];
-if(!start||!end){ alert("Invalid location"); }
-
-// Traffic hotspots
-const trafficZones = [
-  {name:"EDSA Quezon Ave", latMin:14.620, latMax:14.680, lngMin:121.010, lngMax:121.050},
-  {name:"España Blvd", latMin:14.620, latMax:14.650, lngMin:121.020, lngMax:121.080},
-  {name:"C.M. Recto Ave", latMin:14.590, latMax:14.610, lngMin:120.980, lngMax:121.000},
-  {name:"Aurora Blvd", latMin:14.640, latMax:14.660, lngMin:121.050, lngMax:121.080},
-  {name:"Taft Ave", latMin:14.580, latMax:14.610, lngMin:120.990, lngMax:121.000}
+// Stations & Terminals with coordinates, distance & time
+const stations = [
+  {name:"Visayas Avenue Station", lat:14.6765, lng:121.0430, distance:0.01, time:1},
+  {name:"Elliptical Road Station", lat:14.6490, lng:121.0290, distance:2.8, time:5},
+  {name:"Commonwealth Avenue Station", lat:14.6480, lng:121.0370, distance:3.5, time:7},
+  {name:"UP Diliman Station", lat:14.6570, lng:121.0740, distance:4.5, time:10},
+  {name:"FEU Diliman Station", lat:14.6543, lng:121.0734, distance:6.7, time:12},
+  {name:"Tricycle Terminal 1", lat:14.6550, lng:121.0720, distance:6.9, time:13},
+  {name:"Tricycle Terminal 2", lat:14.6500, lng:121.0700, distance:7.2, time:14},
 ];
 
-// Routing
-const routingControl = L.Routing.control({
-  waypoints:[L.latLng(start[0],start[1]), L.latLng(end[0],end[1])],
-  router:L.Routing.osrmv1({serviceUrl:'https://router.project-osrm.org/route/v1'}),
-  routeWhileDragging:false,
-  lineOptions:{styles:[{color:'#42e695',weight:5}]},
-  createMarker: function(i, wp){
-    return L.marker(wp.latLng,{
-      icon:L.icon({iconUrl:i===0?'https://maps.gstatic.com/mapfiles/ms2/micons/green.png':'https://maps.gstatic.com/mapfiles/ms2/micons/red.png',iconSize:[32,32]})
-    });
-  }
-}).addTo(map);
+// Populate list & map markers
+const stationsList = document.getElementById('stations-list');
+stations.forEach(s=>{
+  const li = document.createElement('li');
+  li.textContent = `${s.name} — ${s.distance.toFixed(1)} km, ${s.time} min`;
+  stationsList.appendChild(li);
 
-routingControl.on('routesfound', function(e){
-  const route = e.routes[0];
-  const coords = route.coordinates;
-
-  // Transport suggestions
-  const transports = [
-    {type:"Jeep/Bus", rate:10},
-    {type:"MRT/LRT", rate:12},
-    {type:"Grab/Taxi", rate:25}
-  ];
-  const tlist = document.getElementById('transport-list'); tlist.innerHTML="";
-  transports.forEach(t=>{
-    const distanceKm = (route.summary.totalDistance/1000).toFixed(2);
-    const li=document.createElement('li');
-    li.textContent=`${t.type}: approx. ₱${Math.round(distanceKm*t.rate)}`;
-    tlist.appendChild(li);
-  });
-
-  // Traffic alerts
-  const alerts = [
-    "Heavy traffic near EDSA Quezon Ave",
-    "Construction on España Blvd",
-    "Accident near C.M. Recto"
-  ];
-  const alertList=document.getElementById('alert-list'); alertList.innerHTML="";
-  alerts.forEach(a=>{ const li=document.createElement('li'); li.textContent=a; alertList.appendChild(li); });
-
-  // Highlight route with traffic zones
-  let segment = [];
-  coords.forEach((c,i)=>{
-    let inTraffic = trafficZones.some(zone=>{
-      return c.lat >= zone.latMin && c.lat <= zone.latMax && c.lng >= zone.lngMin && c.lng <= zone.lngMax;
-    });
-    if(segment.length>0 && segment[segment.length-1].traffic !== inTraffic){
-      L.polyline(segment.map(s=>[s.lat,s.lng]),{color:segment[0].traffic?'red':'#42e695',weight:6}).addTo(map);
-      segment = [];
-    }
-    segment.push({lat:c.lat,lng:c.lng,traffic:inTraffic});
-  });
-  if(segment.length>0){
-    L.polyline(segment.map(s=>[s.lat,s.lng]),{color:segment[0].traffic?'red':'#42e695',weight:6}).addTo(map);
-  }
-
-  // Transport stations with popups
-  const stations = [
-    {name:"Visayas Avenue Station", lat:14.6765, lng:121.0430, distance:0.01, time:1},
-    {name:"Elliptical Road Station", lat:14.6490, lng:121.0290, distance:2.8, time:5},
-    {name:"Commonwealth Avenue Station", lat:14.6480, lng:121.0370, distance:3.5, time:7},
-    {name:"UP Diliman Station", lat:14.6570, lng:121.0740, distance:4.5, time:10},
-    {name:"FEU Diliman Station", lat:14.6543, lng:121.0734, distance:6.7, time:12},
-  ];
-  const stationsList = document.getElementById('stations-list');
-  stationsList.innerHTML = "";
-  stations.forEach(s=>{
-    const li = document.createElement('li');
-    li.textContent = `${s.name} — ${s.distance.toFixed(1)} km, ${s.time} min`;
-    stationsList.appendChild(li);
-
-    // Add landmark marker on map
-    const marker = L.marker([s.lat, s.lng],{
-      icon:L.icon({
-        iconUrl:'https://maps.gstatic.com/mapfiles/ms2/micons/blue-dot.png',
-        iconSize:[32,32]
-      })
-    }).addTo(map);
-    marker.bindPopup(`
-      <b>${s.name}</b><br>
-      Distance: ${s.distance.toFixed(1)} km<br>
-      Time: ${s.time} min<br>
-      <img src="https://api.qrserver.com/v1/create-qr-code/?data=https://example.com/commuteiq-route-guide&size=80x80" alt="QR Code">
-    `);
-  });
+  const iconUrl = s.name.includes("Tricycle") ? 'https://maps.gstatic.com/mapfiles/ms2/micons/orange-dot.png' : 'https://maps.gstatic.com/mapfiles/ms2/micons/blue-dot.png';
+  const marker = L.marker([s.lat, s.lng],{
+    icon:L.icon({iconUrl: iconUrl, iconSize:[32,32]})
+  }).addTo(map);
+  marker.bindPopup(`
+    <b>${s.name}</b><br>
+    Distance: ${s.distance.toFixed(1)} km<br>
+    Time: ${s.time} min<br>
+    <img src="https://api.qrserver.com/v1/create-qr-code/?data=https://example.com/commuteiq-route-guide&size=80x80" alt="QR Code">
+  `);
 });
 
 // Panel toggle
 function togglePanel(id){
-  const content = document.getElementById(id+'-content');
+  const content = document.getElementById(id).querySelector('.panel-content');
   const btn = document.querySelector('#'+id+' .toggle-btn');
-  if(content.style.display === 'none'){ content.style.display='block'; btn.textContent='–'; }
+  if(content.style.display==='none'){ content.style.display='block'; btn.textContent='–'; }
   else { content.style.display='none'; btn.textContent='+'; }
 }
 
-// QR code button
-function openQR(){
-  window.open('https://example.com/commuteiq-route-guide','_blank');
-}
+// QR button
+function openQR(){ window.open('https://example.com/commuteiq-route-guide','_blank'); }
 </script>
 </body>
 </html>

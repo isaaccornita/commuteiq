@@ -2,44 +2,41 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>COMMUTEIQ Map - Live GPS</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COMMUTEIQ Map - Live GPS + Route</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"/>
 <style>
 html, body { height:100%; margin:0; font-family:sans-serif; }
 #map { width:100%; height:100%; }
 
-/* Panels */
-.panel {
+.panel{
   position:absolute; left:10px; background:rgba(255,255,255,0.95);
   padding:10px; border-radius:10px; z-index:1000; width:220px;
-  transition: all 0.3s ease;
 }
-.panel h3 { cursor:pointer; margin:0; display:flex; justify-content:space-between; align-items:center; font-size:16px;}
-.panel-content { margin-top:5px; font-size:14px; }
-button.toggle-btn { background:#1e3c72;color:white;padding:0 5px;border-radius:3px; font-size:14px; cursor:pointer; }
+.panel h3{ cursor:pointer; margin:0; display:flex; justify-content:space-between; align-items:center; font-size:16px;}
+.panel-content{ margin-top:5px; font-size:14px;}
+button.toggle-btn{ background:#1e3c72;color:white;padding:0 5px;border-radius:3px; font-size:14px; cursor:pointer; }
 
 #distancePanel{top:10px;}
 #transport{top:130px;}
 #alerts{top:250px;}
 #stations{top:370px;}
 
-@media screen and (max-width: 600px){
-  .panel { width:90%; left:50%; transform:translateX(-50%); }
+@media screen and (max-width:600px){
+  .panel{ width:90%; left:50%; transform:translateX(-50%);}
   #distancePanel{top:auto; bottom:290px;}
   #transport{top:auto; bottom:210px;}
   #alerts{top:auto; bottom:130px;}
   #stations{top:auto; bottom:50px;}
-  .panel h3 { font-size:18px;}
-  .panel-content { font-size:16px;}
+  .panel h3{ font-size:18px;}
+  .panel-content{ font-size:16px;}
 }
 </style>
 </head>
 <body>
 <div id="map"></div>
 
-<!-- Distance & Duration -->
 <div id="distancePanel" class="panel">
   <h3>Distance & Duration <button class="toggle-btn" onclick="togglePanel('distancePanel')">–</button></h3>
   <div class="panel-content">
@@ -48,7 +45,6 @@ button.toggle-btn { background:#1e3c72;color:white;padding:0 5px;border-radius:3
   </div>
 </div>
 
-<!-- Transport Suggestions -->
 <div id="transport" class="panel">
   <h3>Transport Suggestions <button class="toggle-btn" onclick="togglePanel('transport')">–</button></h3>
   <div class="panel-content">
@@ -60,7 +56,6 @@ button.toggle-btn { background:#1e3c72;color:white;padding:0 5px;border-radius:3
   </div>
 </div>
 
-<!-- Traffic Alerts -->
 <div id="alerts" class="panel">
   <h3>Traffic Alerts <button class="toggle-btn" onclick="togglePanel('alerts')">–</button></h3>
   <div class="panel-content">
@@ -72,7 +67,6 @@ button.toggle-btn { background:#1e3c72;color:white;padding:0 5px;border-radius:3
   </div>
 </div>
 
-<!-- Stations & Terminals -->
 <div id="stations" class="panel">
   <h3>Stations & Terminals <button class="toggle-btn" onclick="togglePanel('stations')">–</button></h3>
   <div class="panel-content">
@@ -90,6 +84,51 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
   attribution:'&copy; OpenStreetMap contributors', subdomains:'abcd', maxZoom:19, opacity:0.95
 }).addTo(map);
 
+// Define start and end points
+const start = [14.6760,121.0437]; // Quezon City
+const end = [14.6543,121.0734];   // FEU Diliman
+
+// Routing control with green line
+const routingControl = L.Routing.control({
+  waypoints: [L.latLng(start[0],start[1]), L.latLng(end[0],end[1])],
+  lineOptions: {styles:[{color:'#42e695', weight:5}]},
+  createMarker: function(i, wp){
+    return L.marker(wp.latLng,{icon:L.icon({iconUrl:i===0?'https://maps.gstatic.com/mapfiles/ms2/micons/green.png':'https://maps.gstatic.com/mapfiles/ms2/micons/red.png',iconSize:[32,32]})});
+  },
+  routeWhileDragging:false,
+  addWaypoints:false,
+}).addTo(map);
+
+// Traffic hotspots (red segments)
+routingControl.on('routesfound', function(e){
+  const route = e.routes[0];
+  const coords = route.coordinates;
+
+  const trafficZones = [
+    {latMin:14.620, latMax:14.680, lngMin:121.010, lngMax:121.050},
+    {latMin:14.620, latMax:14.650, lngMin:121.020, lngMax:121.080},
+    {latMin:14.590, latMax:14.610, lngMin:120.980, lngMax:121.000}
+  ];
+
+  // Draw red segments for traffic
+  let segment = [];
+  coords.forEach(c=>{
+    let inTraffic = trafficZones.some(z=>c.lat>=z.latMin && c.lat<=z.latMax && c.lng>=z.lngMin && c.lng<=z.lngMax);
+    segment.push({lat:c.lat,lng:c.lng,traffic:inTraffic});
+  });
+  // Draw polyline segments
+  let lastTraffic = segment[0].traffic;
+  let path = [];
+  segment.forEach((s,i)=>{
+    path.push([s.lat,s.lng]);
+    if(i===segment.length-1 || s.traffic!==segment[i+1].traffic){
+      L.polyline(path,{color:lastTraffic?'red':'#42e695',weight:6}).addTo(map);
+      path = [];
+      if(i<segment.length-1) lastTraffic = segment[i+1].traffic;
+    }
+  });
+});
+
 // Stations & Terminals
 const stations = [
   {name:"Visayas Avenue Station", lat:14.6765, lng:121.0430, distance:0.01, time:1},
@@ -101,7 +140,6 @@ const stations = [
   {name:"Tricycle Terminal 2", lat:14.6500, lng:121.0700, distance:7.2, time:14},
 ];
 
-// Add stations to map & list
 const stationsList = document.getElementById('stations-list');
 stations.forEach(s=>{
   const li = document.createElement('li');
@@ -109,34 +147,26 @@ stations.forEach(s=>{
   stationsList.appendChild(li);
 
   const iconUrl = s.name.includes("Tricycle") ? 'https://maps.gstatic.com/mapfiles/ms2/micons/orange-dot.png' : 'https://maps.gstatic.com/mapfiles/ms2/micons/blue-dot.png';
-  const marker = L.marker([s.lat, s.lng],{
-    icon:L.icon({iconUrl: iconUrl, iconSize:[32,32]})
-  }).addTo(map);
+  const marker = L.marker([s.lat,s.lng],{icon:L.icon({iconUrl:iconUrl,iconSize:[32,32]})}).addTo(map);
   marker.bindPopup(`<b>${s.name}</b><br>Distance: ${s.distance.toFixed(1)} km<br>Time: ${s.time} min`);
 });
 
-// Live GPS marker
+// Live GPS
 let userMarker;
-function updateUserLocation(position){
-  const lat = position.coords.latitude;
-  const lng = position.coords.longitude;
+function updateUserLocation(pos){
+  const lat = pos.coords.latitude;
+  const lng = pos.coords.longitude;
   if(!userMarker){
-    userMarker = L.marker([lat,lng],{
-      icon:L.icon({iconUrl:'https://maps.gstatic.com/mapfiles/ms2/micons/man.png',iconSize:[32,32]})
-    }).addTo(map).bindPopup("You are here").openPopup();
+    userMarker = L.marker([lat,lng],{icon:L.icon({iconUrl:'https://maps.gstatic.com/mapfiles/ms2/micons/man.png',iconSize:[32,32]})}).addTo(map).bindPopup("You are here").openPopup();
     map.setView([lat,lng],14);
   } else {
     userMarker.setLatLng([lat,lng]);
   }
 }
-
-// Watch user position
 if(navigator.geolocation){
-  navigator.geolocation.watchPosition(updateUserLocation, err=>{
-    console.error("GPS error:", err);
-  }, {enableHighAccuracy:true, maximumAge:1000, timeout:5000});
+  navigator.geolocation.watchPosition(updateUserLocation, err=>console.error(err), {enableHighAccuracy:true});
 } else {
-  alert("Geolocation is not supported by this browser.");
+  alert("Geolocation not supported");
 }
 
 // Panel toggle

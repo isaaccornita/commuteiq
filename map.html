@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>COMMUTEIQ Map - OSM Leaflet</title>
 
-<!-- Leaflet CSS -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
 <style>
@@ -34,12 +33,10 @@
   <ul id="transport-list"></ul>
 </div>
 
-<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
 
 <script>
-// Initialize map centered in Metro Manila
 const map = L.map('map').setView([14.646, 121.035], 12);
 
 // OSM tiles
@@ -61,7 +58,6 @@ const locations = {
   "Pasay City":[14.5366, 121.0011]
 };
 
-// Get start/end from URL
 const urlParams = new URLSearchParams(window.location.search);
 const startName = urlParams.get('start') || "Quezon City";
 const endName = urlParams.get('end') || "Makati City";
@@ -73,7 +69,7 @@ if(!start || !end){
   alert("Invalid start or end location.");
 }
 
-// Add route with Leaflet Routing Machine using OSRM
+// Add routing
 const routingControl = L.Routing.control({
   waypoints: [
     L.latLng(start[0], start[1]),
@@ -92,7 +88,7 @@ const routingControl = L.Routing.control({
   }
 }).addTo(map);
 
-// Show distance & duration, and suggest transportation once route is calculated
+// Display distance, duration, and transport suggestions
 routingControl.on('routesfound', function(e){
   const route = e.routes[0];
   const distanceKm = (route.summary.totalDistance / 1000).toFixed(2);
@@ -101,7 +97,7 @@ routingControl.on('routesfound', function(e){
   document.getElementById('distance').innerText = 'Distance: ' + distanceKm + ' km';
   document.getElementById('duration').innerText = 'Duration: ' + durationMin + ' mins';
 
-  // Transportation suggestions (approximate fares)
+  // Transportation suggestions
   const transportOptions = [
     { type: "Jeep/Bus", ratePerKm: 10 },
     { type: "MRT/LRT", ratePerKm: 12 },

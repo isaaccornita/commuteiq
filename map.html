@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>COMMUTEIQ Map - Dynamic GPS Routing</title>
+<title>COMMUTEIQ - FEU Manila to FEU Diliman</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"/>
 <style>
@@ -76,78 +76,68 @@ button.toggle-btn{ background:#1e3c72;color:white;padding:0 5px;border-radius:3p
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
-
 <script>
-const map = L.map('map').setView([14.646,121.035],12);
+// Initialize map
+const map = L.map('map').setView([14.62,121.05],12);
 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
   attribution:'&copy; OpenStreetMap contributors', subdomains:'abcd', maxZoom:19, opacity:0.95
 }).addTo(map);
 
+// FEU Manila → FEU Diliman
+const start = L.latLng(14.6076,121.0519); // FEU Manila
 const destination = L.latLng(14.6543,121.0734); // FEU Diliman
 
-// Stations & Terminals
+// Stations & terminals
 const stations = [
-  {name:"Visayas Avenue Station", lat:14.6765, lng:121.0430, distance:0.01, time:1},
-  {name:"Elliptical Road Station", lat:14.6490, lng:121.0290, distance:2.8, time:5},
-  {name:"Commonwealth Avenue Station", lat:14.6480, lng:121.0370, distance:3.5, time:7},
-  {name:"UP Diliman Station", lat:14.6570, lng:121.0740, distance:4.5, time:10},
-  {name:"FEU Diliman Station", lat:14.6543, lng:121.0734, distance:6.7, time:12},
-  {name:"Tricycle Terminal 1", lat:14.6550, lng:121.0720, distance:6.9, time:13},
-  {name:"Tricycle Terminal 2", lat:14.6500, lng:121.0700, distance:7.2, time:14},
+  {name:"Visayas Avenue Station", lat:14.6765, lng:121.0430},
+  {name:"Elliptical Road Station", lat:14.6490, lng:121.0290},
+  {name:"Commonwealth Avenue Station", lat:14.6480, lng:121.0370},
+  {name:"UP Diliman Station", lat:14.6570, lng:121.0740},
+  {name:"FEU Diliman Station", lat:14.6543, lng:121.0734},
+  {name:"Tricycle Terminal 1", lat:14.6550, lng:121.0720},
+  {name:"Tricycle Terminal 2", lat:14.6500, lng:121.0700},
 ];
 
-const stationsList = document.getElementById('stations-list');
 stations.forEach(s=>{
   const li = document.createElement('li');
-  li.textContent = `${s.name} — ${s.distance.toFixed(1)} km, ${s.time} min`;
-  stationsList.appendChild(li);
+  li.textContent = s.name;
+  document.getElementById('stations-list').appendChild(li);
 
   const iconUrl = s.name.includes("Tricycle") ? 'https://maps.gstatic.com/mapfiles/ms2/micons/orange-dot.png' : 'https://maps.gstatic.com/mapfiles/ms2/micons/blue-dot.png';
   const marker = L.marker([s.lat,s.lng],{icon:L.icon({iconUrl:iconUrl,iconSize:[32,32]})}).addTo(map);
-  marker.bindPopup(`<b>${s.name}</b><br>Distance: ${s.distance.toFixed(1)} km<br>Time: ${s.time} min`);
+  marker.bindPopup(`<b>${s.name}</b>`);
 });
 
 // Live GPS marker
 let userMarker;
-let routingControl;
-
-// Update route from user location to destination
-function updateRoute(position){
-  const userLatLng = L.latLng(position.coords.latitude, position.coords.longitude);
-
-  // Add user marker
-  if(!userMarker){
-    userMarker = L.marker(userLatLng,{icon:L.icon({iconUrl:'https://maps.gstatic.com/mapfiles/ms2/micons/man.png',iconSize:[32,32]})}).addTo(map).bindPopup("You are here").openPopup();
-    map.setView(userLatLng,14);
-  } else userMarker.setLatLng(userLatLng);
-
-  // Remove old routing control
-  if(routingControl) map.removeControl(routingControl);
-
-  // Create routing control
-  routingControl = L.Routing.control({
-    waypoints: [userLatLng,destination],
-    lineOptions:{styles:[{color:'#42e695',weight:5}]},
-    createMarker: ()=>null,
-    routeWhileDragging:false,
-    addWaypoints:false,
-  }).addTo(map);
-
-  // Update distance & duration panel
-  routingControl.on('routesfound', function(e){
-    const route = e.routes[0];
-    document.getElementById('distance').textContent = `Distance: ${route.summary.totalDistance/1000} km`;
-    document.getElementById('duration').textContent = `Duration: ${Math.round(route.summary.totalTime/60)} mins`;
-
-    // Optional: draw red traffic segments (hardcoded zones)
-    route.coordinates.forEach(c=>{});
-  });
-}
-
-// Watch GPS
 if(navigator.geolocation){
-  navigator.geolocation.watchPosition(updateRoute, err=>console.error(err), {enableHighAccuracy:true});
+  navigator.geolocation.watchPosition(pos=>{
+    const userLatLng = L.latLng(pos.coords.latitude,pos.coords.longitude);
+    if(!userMarker){
+      userMarker = L.marker(userLatLng,{
+        icon:L.icon({iconUrl:'https://maps.gstatic.com/mapfiles/ms2/micons/man.png',iconSize:[32,32]})
+      }).addTo(map).bindPopup("You are here").openPopup();
+      map.setView(userLatLng,14);
+    } else userMarker.setLatLng(userLatLng);
+  }, err=>console.error(err), {enableHighAccuracy:true});
 } else alert("Geolocation not supported");
+
+// Route with green line
+let routeControl = L.Routing.control({
+  waypoints:[start,destination],
+  lineOptions:{styles:[{color:'#42e695',weight:5}]},
+  createMarker:i=>i===0 ? L.marker(start,{icon:L.icon({iconUrl:'https://maps.gstatic.com/mapfiles/ms2/micons/green.png',iconSize:[32,32]})}) :
+             i===1 ? L.marker(destination,{icon:L.icon({iconUrl:'https://maps.gstatic.com/mapfiles/ms2/micons/red.png',iconSize:[32,32]})}) : null,
+  routeWhileDragging:false,
+  addWaypoints:false
+}).addTo(map);
+
+// Update Distance & Duration dynamically
+routeControl.on('routesfound', e=>{
+  const route = e.routes[0];
+  document.getElementById('distance').textContent = `Distance: ${(route.summary.totalDistance/1000).toFixed(2)} km`;
+  document.getElementById('duration').textContent = `Duration: ${Math.round(route.summary.totalTime/60)} mins`;
+});
 
 // Panel toggle
 function togglePanel(id){

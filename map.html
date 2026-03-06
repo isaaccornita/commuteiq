@@ -3,14 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>COMMUTEIQ Map - Transport Stations</title>
+<title>COMMUTEIQ Map - Stations & Landmarks</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
 <style>
 html, body { height:100%; margin:0; font-family:sans-serif; }
 #map { width:100%; height:100%; }
 
-/* Panel styling */
 .panel {
   position:absolute; left:10px; background:rgba(255,255,255,0.95);
   padding:10px; border-radius:10px; z-index:1000; width:220px;
@@ -20,19 +19,16 @@ html, body { height:100%; margin:0; font-family:sans-serif; }
 .panel-content { margin-top:5px; font-size:14px; }
 button.toggle-btn { background:#1e3c72;color:white;padding:0 5px;border-radius:3px; font-size:14px; cursor:pointer; }
 
-/* Panel positions on desktop */
 #stations{top:10px;}
 #transport{top:170px;}
 #alerts{top:310px;}
 
-/* QR code floating button */
 #qr-btn {
   position:absolute; bottom:20px; right:20px; z-index:1100;
   background:#ff3b30; color:white; border:none; padding:12px 16px;
   border-radius:50%; font-size:16px; cursor:pointer; box-shadow:0 3px 6px rgba(0,0,0,0.3);
 }
 
-/* Mobile responsiveness */
 @media screen and (max-width: 600px){
   .panel { width:90%; left:50%; transform:translateX(-50%); }
   #stations{top:auto; bottom:210px;}
@@ -165,13 +161,13 @@ routingControl.on('routesfound', function(e){
     L.polyline(segment.map(s=>[s.lat,s.lng]),{color:segment[0].traffic?'red':'#42e695',weight:6}).addTo(map);
   }
 
-  // Transport stations along route
+  // Transport stations with popups
   const stations = [
-    {name:"Visayas Avenue Station", distance:0.01, time:1},
-    {name:"Elliptical Road Station", distance:2.8, time:5},
-    {name:"Commonwealth Avenue Station", distance:3.5, time:7},
-    {name:"UP Diliman Station", distance:4.5, time:10},
-    {name:"FEU Diliman Station", distance:6.7, time:12},
+    {name:"Visayas Avenue Station", lat:14.6765, lng:121.0430, distance:0.01, time:1},
+    {name:"Elliptical Road Station", lat:14.6490, lng:121.0290, distance:2.8, time:5},
+    {name:"Commonwealth Avenue Station", lat:14.6480, lng:121.0370, distance:3.5, time:7},
+    {name:"UP Diliman Station", lat:14.6570, lng:121.0740, distance:4.5, time:10},
+    {name:"FEU Diliman Station", lat:14.6543, lng:121.0734, distance:6.7, time:12},
   ];
   const stationsList = document.getElementById('stations-list');
   stationsList.innerHTML = "";
@@ -179,6 +175,20 @@ routingControl.on('routesfound', function(e){
     const li = document.createElement('li');
     li.textContent = `${s.name} — ${s.distance.toFixed(1)} km, ${s.time} min`;
     stationsList.appendChild(li);
+
+    // Add landmark marker on map
+    const marker = L.marker([s.lat, s.lng],{
+      icon:L.icon({
+        iconUrl:'https://maps.gstatic.com/mapfiles/ms2/micons/blue-dot.png',
+        iconSize:[32,32]
+      })
+    }).addTo(map);
+    marker.bindPopup(`
+      <b>${s.name}</b><br>
+      Distance: ${s.distance.toFixed(1)} km<br>
+      Time: ${s.time} min<br>
+      <img src="https://api.qrserver.com/v1/create-qr-code/?data=https://example.com/commuteiq-route-guide&size=80x80" alt="QR Code">
+    `);
   });
 });
 

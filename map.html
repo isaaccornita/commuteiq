@@ -1,36 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COMMUTEIQ Map</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.2/dist/tailwind.min.css" rel="stylesheet">
+<script src='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js'></script>
+<link href='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css' rel='stylesheet' />
+<style>
+  body {
+    font-family: 'Inter', sans-serif;
+    margin: 0; padding: 0;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: white;
+    overflow-x: hidden;
+  }
+
+  #map {
+    width: 100%;
+    height: 70vh;
+    border-radius: 15px;
+    opacity: 0;
+    transition: all 0.5s ease;
+    animation: fadeIn 1s forwards;
+  }
+
+  #route-info {
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+    padding: 20px;
+    border-radius: 15px;
+    margin-top: 20px;
+    width: 90%;
+    max-width: 400px;
+    opacity: 0;
+    transform: translateY(30px);
+    animation: slideUp 1s forwards;
+    animation-delay: 1.2s;
+  }
+
+  @keyframes fadeIn { 0% {opacity:0;} 100% {opacity:1;} }
+  @keyframes slideUp { 0% {opacity:0; transform:translateY(30px);} 100% {opacity:1; transform:translateY(0);} }
+</style>
+</head>
+<body class="flex flex-col items-center p-4">
+
+<h1 class="text-3xl font-bold mb-4 fade-in" style="animation-delay:0.5s;">Your Route Map</h1>
+<div id="map"></div>
+<div id="route-info">
+  <h2 class="text-xl font-semibold mb-2">Route Summary</h2>
+  <p id="distance">Distance: calculating...</p>
+  <p id="duration">Estimated Time: calculating...</p>
+</div>
+
 <script>
   mapboxgl.accessToken = 'YOUR_MAPBOX_ACCESS_TOKEN';
 
-  // Metro Manila bounding box: [minLng, minLat, maxLng, maxLat]
-  const metroManilaBounds = [
-    [120.911, 14.402], // southwest corner
-    [121.126, 14.853]  // northeast corner
-  ];
+  // Metro Manila bounding box [minLng, minLat, maxLng, maxLat]
+  const metroManilaBounds = [[120.911, 14.402], [121.126, 14.853]];
 
+  // Initialize Mapbox map
   const map = new mapboxgl.Map({
     container: 'map',
     style: 'mapbox://styles/mapbox/streets-v12',
-    center: [121.035, 14.646], // center of Metro Manila
+    center: [121.035, 14.646],
     zoom: 11,
-    maxBounds: metroManilaBounds // restrict panning to Metro Manila
+    maxBounds: metroManilaBounds
   });
 
-  // Restrict zoom to reasonable city levels
   map.setMinZoom(10);
   map.setMaxZoom(15);
 
-  // Fetch start/end locations from URL
+  // Get start/end from URL
   const urlParams = new URLSearchParams(window.location.search);
-  const start = urlParams.get('start') || "Quezon City";
-  const end = urlParams.get('end') || "Makati City";
+  const startLocation = urlParams.get('start') || "Quezon City";
+  const endLocation = urlParams.get('end') || "Makati City";
 
+  // Helper: fetch coordinates
   async function getCoords(location) {
     const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(location)}.json?access_token=${mapboxgl.accessToken}`);
     const data = await res.json();
-    const coords = data.features[0]?.center;
+    if (!data.features || !data.features[0]) return null;
 
-    // Check if coords are inside Metro Manila bounds
-    if (!coords || coords[0] < metroManilaBounds[0][0] || coords[0] > metroManilaBounds[1][0] ||
+    const coords = data.features[0].center;
+    // Check if inside Metro Manila bounds
+    if (coords[0] < metroManilaBounds[0][0] || coords[0] > metroManilaBounds[1][0] ||
         coords[1] < metroManilaBounds[0][1] || coords[1] > metroManilaBounds[1][1]) {
       alert(`${location} is outside Metro Manila!`);
       return null;
@@ -38,31 +92,45 @@
     return coords;
   }
 
-  async function drawRoute() {
-    const startCoord = await getCoords(start);
-    const endCoord = await getCoords(end);
+  // Main function to draw route
+  map.on('load', async () => {
+    const startCoord = await getCoords(startLocation);
+    const endCoord = await getCoords(endLocation);
     if (!startCoord || !endCoord) return;
 
+    // Add markers
     new mapboxgl.Marker({color:'green'}).setLngLat(startCoord).addTo(map);
     new mapboxgl.Marker({color:'red'}).setLngLat(endCoord).addTo(map);
 
+    // Fetch directions
     const res = await fetch(`https://api.mapbox.com/directions/v5/mapbox/driving/${startCoord[0]},${startCoord[1]};${endCoord[0]},${endCoord[1]}?geometries=geojson&access_token=${mapboxgl.accessToken}`);
     const data = await res.json();
+    if (!data.routes || !data.routes[0]) return alert("Route not found!");
+
     const route = data.routes[0].geometry;
 
-    map.on('load', () => {
-      map.addSource('route', { type: 'geojson', data: { type:'Feature', geometry: route } });
-      map.addLayer({ id:'route', type:'line', source:'route', layout:{'line-join':'round','line-cap':'round'}, paint:{'line-color':'#42e695','line-width':5}});
-      map.fitBounds([startCoord, endCoord], { padding: 50 });
-
-      document.getElementById('map').style.opacity = 1;
-
-      const distance = (data.routes[0].distance / 1000).toFixed(2) + ' km';
-      const duration = (data.routes[0].duration / 60).toFixed(0) + ' mins';
-      document.getElementById('distance').innerText = 'Distance: ' + distance;
-      document.getElementById('duration').innerText = 'Estimated Time: ' + duration;
+    // Add route line
+    map.addSource('route', { type: 'geojson', data: { type:'Feature', geometry: route } });
+    map.addLayer({
+      id:'route',
+      type:'line',
+      source:'route',
+      layout:{'line-join':'round','line-cap':'round'},
+      paint:{'line-color':'#42e695','line-width':5}
     });
-  }
 
-  drawRoute();
+    // Fit map to route
+    map.fitBounds([startCoord, endCoord], { padding: 50 });
+
+    // Show map and info
+    document.getElementById('map').style.opacity = 1;
+    document.getElementById('route-info').style.opacity = 1;
+
+    const distance = (data.routes[0].distance / 1000).toFixed(2) + ' km';
+    const duration = (data.routes[0].duration / 60).toFixed(0) + ' mins';
+    document.getElementById('distance').innerText = 'Distance: ' + distance;
+    document.getElementById('duration').innerText = 'Estimated Time: ' + duration;
+  });
 </script>
+</body>
+</html>

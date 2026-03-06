@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>COMMUTEIQ Map - Night Mode</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>COMMUTEIQ Map - Mobile Friendly</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
 <style>
@@ -15,14 +15,24 @@ html, body { height:100%; margin:0; font-family:sans-serif; }
   position:absolute; left:10px; background:rgba(255,255,255,0.95);
   padding:10px; border-radius:10px; z-index:1000; width:220px;
 }
-.panel h3 { cursor:pointer; margin:0; display:flex; justify-content:space-between; align-items:center; }
-.panel-content { margin-top:5px; }
+.panel h3 { cursor:pointer; margin:0; display:flex; justify-content:space-between; align-items:center; font-size:16px;}
+.panel-content { margin-top:5px; font-size:14px; }
 button.toggle-btn { background:#1e3c72;color:white;padding:0 5px;border-radius:3px; font-size:14px; cursor:pointer; }
 
-/* Panel positions */
+/* Panel positions on desktop */
 #info{top:10px;}
 #transport{top:110px;}
 #alerts{top:250px;}
+
+/* Mobile responsiveness */
+@media screen and (max-width: 600px){
+  .panel { width:90%; left:50%; transform:translateX(-50%); }
+  #info{top:auto; bottom:210px;}
+  #transport{top:auto; bottom:140px;}
+  #alerts{top:auto; bottom:70px;}
+  .panel h3 { font-size:18px;}
+  .panel-content { font-size:16px;}
+}
 </style>
 </head>
 <body>
@@ -57,7 +67,7 @@ button.toggle-btn { background:#1e3c72;color:white;padding:0 5px;border-radius:3
 <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
 
 <script>
-// Initialize map (slightly lighter night tiles for readability)
+// Initialize map (lighter night tiles for readability)
 const map = L.map('map').setView([14.646,121.035],12);
 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
   attribution:'&copy; OpenStreetMap contributors',
@@ -79,7 +89,7 @@ const start = locations[startName];
 const end = locations[endName];
 if(!start||!end){ alert("Invalid location"); }
 
-// Known traffic hotspots (Metro Manila)
+// Traffic hotspots
 const trafficZones = [
   {name:"EDSA Quezon Ave", latMin:14.620, latMax:14.680, lngMin:121.010, lngMax:121.050},
   {name:"España Blvd", latMin:14.620, latMax:14.650, lngMin:121.020, lngMax:121.080},
@@ -88,7 +98,7 @@ const trafficZones = [
   {name:"Taft Ave", latMin:14.580, latMax:14.610, lngMin:120.990, lngMax:121.000}
 ];
 
-// Routing control
+// Routing
 const routingControl = L.Routing.control({
   waypoints:[L.latLng(start[0],start[1]), L.latLng(end[0],end[1])],
   router:L.Routing.osrmv1({serviceUrl:'https://router.project-osrm.org/route/v1'}),
@@ -101,7 +111,6 @@ const routingControl = L.Routing.control({
   }
 }).addTo(map);
 
-// When route is ready
 routingControl.on('routesfound', function(e){
   const route = e.routes[0];
   const coords = route.coordinates;
